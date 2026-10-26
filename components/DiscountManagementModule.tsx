@@ -2119,130 +2119,118 @@ export const INITIAL_DISCOUNTS: DiscountRecord[] = [
 
 export interface ReferralHistoryItem {
   id: string;
-  orderCode: string; // Số đơn / Lệnh sửa chữa hoàn thành
-  referralCode: string; // Mã giới thiệu đã dùng
-  referrerCode: string; // Mã người giới thiệu (khách cũ)
-  referrerName: string; // Tên người giới thiệu
-  referrerPhone: string;
-  newCustomerCode: string; // Mã người mới
-  newCustomerName: string; // Tên người mới
-  newCustomerPhone: string;
-  completedDate: string; // Ngày hoàn thành
-  orderValue: number; // Giá trị đơn
-  rewardStatus: 'Đã thưởng' | 'Chờ trả thưởng';
+  orderCode: string; // Số đơn / Lệnh sửa chữa hoàn thành (e.g. 2610-000075)
+  referralCode?: string; // Mã giới thiệu đã dùng
+  referrerCode: string; // Mã người giới thiệu (khách cũ) (e.g. KH-2023-089)
+  referrerName: string; // Tên người giới thiệu (e.g. Phạm Hoàng Nam)
+  referrerPhone: string; // '0901 234 567'
+  newCustomerCode?: string; // Mã người mới
+  newCustomerName: string; // Tên người mới (e.g. Nguyễn Hữu Trọng)
+  newCustomerPhone: string; // '0988 123 789'
+  completedDate: string; // Thời gian hoàn thành e.g. '24/10/2026 16:50'
+  orderValue: number; // Giá trị đơn (e.g. 2500000)
+  orderStatus?: string; // Trạng thái đơn e.g. 'Hoàn thành'
+  rewardCode?: string; // Mã thưởng tự động sinh e.g. 'GT-THUONG-3692'
+  rewardValue?: number; // Trị giá thưởng e.g. 200000
+  rewardExpiryDate?: string; // Hạn dùng e.g. '23/11/2026'
+  rewardCodeStatus?: 'Chưa sử dụng' | 'Đã sử dụng' | 'Hết hạn'; // Trạng thái mã
+  rewardStatus?: 'Đã thưởng' | 'Chờ trả thưởng';
 }
 
 export const INITIAL_REFERRAL_HISTORY: ReferralHistoryItem[] = [
   {
     id: 'ref-01',
-    orderCode: 'RO-2026-0042',
+    orderCode: '2610-000075',
     referralCode: 'GT-KHC-002',
-    referrerCode: 'KH-2024-001',
-    referrerName: 'Nguyễn Văn An',
-    referrerPhone: '0901234567',
+    referrerCode: 'KH-2023-089',
+    referrerName: 'Phạm Hoàng Nam',
+    referrerPhone: '0901 234 567',
     newCustomerCode: 'KH-NEW-101',
-    newCustomerName: 'Trần Đình Trọng',
-    newCustomerPhone: '0912345678',
-    completedDate: '15/01/2026',
-    orderValue: 2450000,
+    newCustomerName: 'Nguyễn Hữu Trọng',
+    newCustomerPhone: '0988 123 789',
+    completedDate: '24/10/2026 16:50',
+    orderValue: 2500000,
+    orderStatus: 'Hoàn thành',
+    rewardCode: 'GT-THUONG-3692',
+    rewardValue: 200000,
+    rewardExpiryDate: '23/11/2026',
+    rewardCodeStatus: 'Chưa sử dụng',
     rewardStatus: 'Đã thưởng',
   },
   {
     id: 'ref-02',
-    orderCode: 'RO-2026-0056',
+    orderCode: '2610-000088',
     referralCode: 'GT-KHC-018',
     referrerCode: 'KH-2024-018',
     referrerName: 'Nguyễn Thị Bích Ngọc',
-    referrerPhone: '0987654321',
+    referrerPhone: '0987 654 321',
     newCustomerCode: 'KH-NEW-102',
     newCustomerName: 'Phạm Thu Trang',
-    newCustomerPhone: '0988776655',
-    completedDate: '18/01/2026',
+    newCustomerPhone: '0988 776 655',
+    completedDate: '24/10/2026 14:15',
     orderValue: 1850000,
+    orderStatus: 'Hoàn thành',
+    rewardCode: 'GT-THUONG-5512',
+    rewardValue: 200000,
+    rewardExpiryDate: '23/11/2026',
+    rewardCodeStatus: 'Chưa sử dụng',
     rewardStatus: 'Đã thưởng',
   },
   {
     id: 'ref-03',
-    orderCode: 'RO-2026-0063',
+    orderCode: '2610-000092',
     referralCode: 'GT-KHC-032',
     referrerCode: 'KH-2024-032',
     referrerName: 'Đỗ Gia Khang',
-    referrerPhone: '0903889900',
+    referrerPhone: '0903 889 900',
     newCustomerCode: 'KH-NEW-103',
     newCustomerName: 'Hoàng Anh Tuấn',
-    newCustomerPhone: '0933221100',
-    completedDate: '22/01/2026',
+    newCustomerPhone: '0933 221 100',
+    completedDate: '23/10/2026 11:30',
     orderValue: 3200000,
+    orderStatus: 'Hoàn thành',
+    rewardCode: 'GT-THUONG-7789',
+    rewardValue: 200000,
+    rewardExpiryDate: '22/11/2026',
+    rewardCodeStatus: 'Đã sử dụng',
     rewardStatus: 'Đã thưởng',
   },
   {
     id: 'ref-04',
-    orderCode: 'RO-2026-0078',
+    orderCode: '2610-000104',
     referralCode: 'GT-KHC-055',
     referrerCode: 'KH-2024-055',
     referrerName: 'Võ Hoàng Yến',
-    referrerPhone: '0908776655',
+    referrerPhone: '0908 776 655',
     newCustomerCode: 'KH-NEW-104',
     newCustomerName: 'Đặng Ngọc Lan',
-    newCustomerPhone: '0977665544',
-    completedDate: '26/01/2026',
+    newCustomerPhone: '0977 665 544',
+    completedDate: '22/10/2026 09:40',
     orderValue: 1500000,
+    orderStatus: 'Hoàn thành',
+    rewardCode: 'GT-THUONG-1204',
+    rewardValue: 200000,
+    rewardExpiryDate: '21/11/2026',
+    rewardCodeStatus: 'Chưa sử dụng',
     rewardStatus: 'Đã thưởng',
   },
   {
     id: 'ref-05',
-    orderCode: 'RO-2026-0089',
+    orderCode: '2610-000115',
     referralCode: 'GT-KHC-071',
     referrerCode: 'KH-2024-071',
     referrerName: 'Vũ Minh Đạt',
-    referrerPhone: '0977443322',
+    referrerPhone: '0977 443 322',
     newCustomerCode: 'KH-NEW-105',
     newCustomerName: 'Lý Quốc Bảo',
-    newCustomerPhone: '0966554433',
-    completedDate: '02/02/2026',
+    newCustomerPhone: '0966 554 433',
+    completedDate: '21/10/2026 17:05',
     orderValue: 4100000,
-    rewardStatus: 'Chờ trả thưởng',
-  },
-  {
-    id: 'ref-06',
-    orderCode: 'RO-2026-0095',
-    referralCode: 'GT-KHC-099',
-    referrerCode: 'KH-2024-099',
-    referrerName: 'Hoàng Văn Thái',
-    referrerPhone: '0966554433',
-    newCustomerCode: 'KH-NEW-106',
-    newCustomerName: 'Vũ Thanh Tùng',
-    newCustomerPhone: '0944332211',
-    completedDate: '05/02/2026',
-    orderValue: 2750000,
-    rewardStatus: 'Chờ trả thưởng',
-  },
-  {
-    id: 'ref-07',
-    orderCode: 'RO-2026-0102',
-    referralCode: 'GT-KHC-002',
-    referrerCode: 'KH-2024-001',
-    referrerName: 'Nguyễn Văn An',
-    referrerPhone: '0901234567',
-    newCustomerCode: 'KH-NEW-107',
-    newCustomerName: 'Nguyễn Thành Long',
-    newCustomerPhone: '0922113344',
-    completedDate: '09/02/2026',
-    orderValue: 1980000,
-    rewardStatus: 'Đã thưởng',
-  },
-  {
-    id: 'ref-08',
-    orderCode: 'RO-2026-0118',
-    referralCode: 'GT-KHC-142',
-    referrerCode: 'KH-2023-142',
-    referrerName: 'Lê Hoàng Việt',
-    referrerPhone: '0938112233',
-    newCustomerCode: 'KH-NEW-108',
-    newCustomerName: 'Bùi Thế Hiển',
-    newCustomerPhone: '0911882233',
-    completedDate: '12/02/2026',
-    orderValue: 5600000,
+    orderStatus: 'Hoàn thành',
+    rewardCode: 'GT-THUONG-9931',
+    rewardValue: 200000,
+    rewardExpiryDate: '20/11/2026',
+    rewardCodeStatus: 'Chưa sử dụng',
     rewardStatus: 'Đã thưởng',
   },
 ];
@@ -2433,22 +2421,34 @@ export const DiscountManagementModule: React.FC = () => {
   const [isReferralHistoryModalOpen, setIsReferralHistoryModalOpen] = useState(false);
   const [referralHistorySearch, setReferralHistorySearch] = useState('');
   const [referralRewardStatusFilter, setReferralRewardStatusFilter] = useState<'all' | 'Đã thưởng' | 'Chờ trả thưởng'>('all');
+  const [referralCodeStatusFilter, setReferralCodeStatusFilter] = useState<'all' | 'Chưa sử dụng' | 'Đã sử dụng'>('all');
+  const [copiedRewardCode, setCopiedRewardCode] = useState<string | null>(null);
 
   const formReferralCompletedOrdersCount = referralHistoryList.length;
+
+  // 4 Thống kê phục vụ giao diện Lịch sử Giới thiệu
+  const referralCompletedOrdersCount = referralHistoryList.length;
+  const referralGeneratedCodesCount = referralHistoryList.filter((item) => Boolean(item.rewardCode || item.referralCode)).length;
+  const referralTotalPurchasedAmount = referralHistoryList.reduce((sum, item) => sum + (item.orderValue || 0), 0);
+  const referralUsedRewardsCount = referralHistoryList.filter((item) => item.rewardCodeStatus === 'Đã sử dụng').length;
 
   const filteredReferralHistory = referralHistoryList.filter((item) => {
     if (referralHistorySearch.trim()) {
       const q = referralHistorySearch.toLowerCase();
       const match =
         item.orderCode.toLowerCase().includes(q) ||
-        item.referralCode.toLowerCase().includes(q) ||
+        (item.referralCode && item.referralCode.toLowerCase().includes(q)) ||
+        (item.rewardCode && item.rewardCode.toLowerCase().includes(q)) ||
         item.referrerCode.toLowerCase().includes(q) ||
         item.referrerName.toLowerCase().includes(q) ||
         item.referrerPhone.toLowerCase().includes(q) ||
-        item.newCustomerCode.toLowerCase().includes(q) ||
+        (item.newCustomerCode && item.newCustomerCode.toLowerCase().includes(q)) ||
         item.newCustomerName.toLowerCase().includes(q) ||
         item.newCustomerPhone.toLowerCase().includes(q);
       if (!match) return false;
+    }
+    if (referralCodeStatusFilter !== 'all' && (item.rewardCodeStatus || 'Chưa sử dụng') !== referralCodeStatusFilter) {
+      return false;
     }
     if (referralRewardStatusFilter !== 'all' && item.rewardStatus !== referralRewardStatusFilter) {
       return false;
@@ -8922,139 +8922,265 @@ export const DiscountManagementModule: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Xem Lịch sử Giới thiệu */}
+      {/* ========================================================================= */}
+      {/* MODAL: XEM LỊCH SỬ GIỚI THIỆU (FULL MÀN HÌNH THEO CHUẨN GIAO DIỆN) */}
+      {/* ========================================================================= */}
       {isReferralHistoryModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-[2px] animate-fadeIn"
-          onClick={() => setIsReferralHistoryModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full border border-gray-100 overflow-hidden transform transition-all animate-scaleUp flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/40 border-b border-emerald-200/80 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                  <History className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-gray-900 leading-tight">
-                      Lịch sử Giới thiệu khách hàng
-                    </h3>
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      {referralHistoryList.length} đơn hoàn thành
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Danh sách đơn hàng hoàn thành của người mới được giới thiệu bởi khách hàng cũ
-                  </p>
-                </div>
-              </div>
+        <div className="fixed inset-0 z-[70] bg-[#F4F6F9] flex flex-col overflow-hidden animate-fadeIn">
+          {/* Top Sticky Header */}
+          <div className="h-16 px-6 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-xs z-20">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setIsReferralHistoryModalOpen(false)}
-                className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/80 flex items-center justify-center transition-colors cursor-pointer"
-                title="Đóng"
+                className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                title="Quay lại"
               >
-                <X className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-xs shrink-0">
+                <History className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-base font-bold text-gray-900 leading-tight">
+                    Lịch sử Giới thiệu khách hàng
+                  </h3>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    {referralHistoryList.length} đơn hoàn thành
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Theo dõi danh sách đơn hàng người mới hoàn thành và mã thưởng tự sinh cho Người giới thiệu
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsReferralHistoryModalOpen(false)}
+                className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+                <span>Đóng</span>
               </button>
             </div>
+          </div>
 
-            {/* Filter bar */}
-            <div className="px-6 py-3 bg-gray-50/80 border-b border-gray-200 flex items-center justify-between gap-3 flex-wrap shrink-0">
-              <div className="relative flex-1 min-w-[240px]">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={referralHistorySearch}
-                  onChange={(e) => setReferralHistorySearch(e.target.value)}
-                  placeholder="Tìm theo số đơn (RO), mã giới thiệu, tên/SĐT khách hàng..."
-                  className="w-full pl-9 pr-8 py-2 bg-white border border-gray-300 rounded-lg text-xs outline-none focus:border-[#1A73E8]"
-                />
-                {referralHistorySearch && (
-                  <button
-                    type="button"
-                    onClick={() => setReferralHistorySearch('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+          {/* Body cuộn nội dung */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            {/* 4 Thẻ Thống kê hàng đầu */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Đơn người mới hoàn tất */}
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-2xs flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Đơn người mới hoàn tất</div>
+                  <div className="text-2xl font-black text-gray-900 tracking-tight">
+                    {referralCompletedOrdersCount} <span className="text-sm font-semibold text-gray-500">đơn</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">Lệnh RO đã nghiệm thu hoàn tất</div>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
+                  <Receipt className="w-6 h-6" />
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 whitespace-nowrap">Trạng thái thưởng:</span>
-                <select
-                  value={referralRewardStatusFilter}
-                  onChange={(e) => setReferralRewardStatusFilter(e.target.value as any)}
-                  className="px-2.5 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 outline-none focus:border-[#1A73E8] bg-white cursor-pointer shadow-2xs"
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="Đã thưởng">Đã thưởng</option>
-                  <option value="Chờ trả thưởng">Chờ trả thưởng</option>
-                </select>
+              {/* Card 2: Mã thưởng đã tự sinh */}
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-2xs flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Mã thưởng đã tự sinh</div>
+                  <div className="text-2xl font-black text-emerald-600 tracking-tight">
+                    {referralGeneratedCodesCount} <span className="text-sm font-semibold text-emerald-600/80">mã</span>
+                  </div>
+                  <div className="text-[11px] text-emerald-600/70 mt-0.5">Tự động cấp cho Người giới thiệu</div>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Gift className="w-6 h-6" />
+                </div>
+              </div>
+
+              {/* Card 3: Tổng tiền người mới đã mua */}
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-2xs flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Tổng tiền người mới đã mua</div>
+                  <div className="text-2xl font-black text-[#1A73E8] tracking-tight">
+                    {referralTotalPurchasedAmount.toLocaleString('vi-VN')} <span className="text-sm font-semibold text-[#1A73E8]/80">đ</span>
+                  </div>
+                  <div className="text-[11px] text-blue-500/70 mt-0.5">Tổng giá trị đơn hàng kích hoạt</div>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#1A73E8] flex items-center justify-center shrink-0">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+              </div>
+
+              {/* Card 4: Mã thưởng đã sử dụng */}
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-2xs flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Mã thưởng đã sử dụng</div>
+                  <div className="text-2xl font-black text-purple-600 tracking-tight">
+                    {referralUsedRewardsCount} <span className="text-sm font-semibold text-purple-600/70">/ {referralGeneratedCodesCount}</span>
+                  </div>
+                  <div className="text-[11px] text-purple-500/70 mt-0.5">Khách cũ quay lại dùng voucher</div>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                  <Ticket className="w-6 h-6" />
+                </div>
               </div>
             </div>
 
-            {/* Table Area */}
-            <div className="flex-1 overflow-auto p-6 bg-slate-50/40">
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
+            {/* Bảng Dữ liệu Lịch sử Giới thiệu */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden flex flex-col">
+              {/* Toolbar bộ lọc & tìm kiếm */}
+              <div className="p-4 border-b border-gray-200 bg-gray-50/60 flex items-center justify-between gap-3 flex-wrap">
+                <div className="relative flex-1 min-w-[280px]">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={referralHistorySearch}
+                    onChange={(e) => setReferralHistorySearch(e.target.value)}
+                    placeholder="Tìm theo người giới thiệu, người mới, số đơn (RO), mã thưởng..."
+                    className="w-full pl-9 pr-8 py-2 bg-white border border-gray-300 rounded-lg text-xs outline-none focus:border-[#1A73E8] shadow-2xs"
+                  />
+                  {referralHistorySearch && (
+                    <button
+                      type="button"
+                      onClick={() => setReferralHistorySearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 whitespace-nowrap">Trạng thái mã:</span>
+                  <select
+                    value={referralCodeStatusFilter}
+                    onChange={(e) => setReferralCodeStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 outline-none focus:border-[#1A73E8] bg-white cursor-pointer shadow-2xs"
+                  >
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="Chưa sử dụng">Chưa sử dụng</option>
+                    <option value="Đã sử dụng">Đã sử dụng</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-[#F8FAFC] text-gray-700 font-bold border-b border-gray-200 sticky top-0 z-10 whitespace-nowrap">
+                  <thead className="bg-[#F8FAFC] text-gray-700 font-bold border-b border-gray-200 whitespace-nowrap">
                     <tr>
-                      <th className="py-2.5 px-3 text-center w-12 border-r border-gray-200/80">STT</th>
-                      <th className="py-2.5 px-3 min-w-[120px] border-r border-gray-200/80">Số đơn (RO)</th>
-                      <th className="py-2.5 px-3 min-w-[120px] border-r border-gray-200/80">Mã giới thiệu</th>
-                      <th className="py-2.5 px-3 min-w-[180px] border-r border-gray-200/80">Người giới thiệu (Khách cũ)</th>
-                      <th className="py-2.5 px-3 min-w-[180px] border-r border-gray-200/80">Người mới hoàn thành đơn</th>
-                      <th className="py-2.5 px-3 min-w-[110px] text-center border-r border-gray-200/80">Ngày hoàn thành</th>
-                      <th className="py-2.5 px-3 min-w-[120px] text-right border-r border-gray-200/80">Giá trị đơn</th>
-                      <th className="py-2.5 px-3 min-w-[110px] text-center">Trạng thái thưởng</th>
+                      <th className="py-3 px-4 border-r border-gray-200/80">Thời gian</th>
+                      <th className="py-3 px-4 min-w-[200px] border-r border-gray-200/80">Người giới thiệu (Khách hiện hữu)</th>
+                      <th className="py-3 px-4 min-w-[180px] border-r border-gray-200/80">Người mới được giới thiệu</th>
+                      <th className="py-3 px-4 min-w-[190px] border-r border-gray-200/80">Đơn hàng kích hoạt</th>
+                      <th className="py-3 px-4 min-w-[180px] border-r border-gray-200/80">Mã thưởng TỰ ĐỘNG SINH</th>
+                      <th className="py-3 px-4 min-w-[120px] text-right border-r border-gray-200/80">Trị giá thưởng</th>
+                      <th className="py-3 px-4 min-w-[110px] text-center border-r border-gray-200/80">Hạn dùng</th>
+                      <th className="py-3 px-4 min-w-[120px] text-center border-r border-gray-200/80">Trạng thái mã</th>
+                      <th className="py-3 px-4 text-center min-w-[100px]">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filteredReferralHistory.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-gray-400">
-                          Không tìm thấy đơn hàng nào trong lịch sử giới thiệu.
+                        <td colSpan={9} className="py-12 text-center text-gray-400">
+                          Không tìm thấy bản ghi nào trong lịch sử giới thiệu.
                         </td>
                       </tr>
                     ) : (
-                      filteredReferralHistory.map((item, idx) => (
-                        <tr key={item.id} className="hover:bg-blue-50/20 transition-colors">
-                          <td className="py-2.5 px-3 text-center text-gray-500 font-medium border-r border-gray-100">
-                            {idx + 1}
-                          </td>
-                          <td className="py-2.5 px-3 font-mono font-bold text-[#1A73E8] border-r border-gray-100">
-                            {item.orderCode}
-                          </td>
-                          <td className="py-2.5 px-3 font-mono font-semibold text-gray-800 border-r border-gray-100">
-                            {item.referralCode}
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-gray-100">
-                            <div className="font-semibold text-gray-900">{item.referrerName}</div>
-                            <div className="text-[11px] text-gray-500 font-mono">{item.referrerCode} • {item.referrerPhone}</div>
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-gray-100">
-                            <div className="font-semibold text-gray-900">{item.newCustomerName}</div>
-                            <div className="text-[11px] text-gray-500 font-mono">{item.newCustomerCode} • {item.newCustomerPhone}</div>
-                          </td>
-                          <td className="py-2.5 px-3 text-center text-gray-700 border-r border-gray-100">
+                      filteredReferralHistory.map((item) => (
+                        <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
+                          {/* 1. Thời gian */}
+                          <td className="py-3 px-4 text-gray-600 font-medium whitespace-nowrap border-r border-gray-100">
                             {item.completedDate}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-bold text-gray-900 border-r border-gray-100">
-                            {item.orderValue.toLocaleString('vi-VN')} đ
+
+                          {/* 2. Người giới thiệu (Khách hiện hữu) - Hiển thị ĐẦU TIÊN */}
+                          <td className="py-3 px-4 border-r border-gray-100">
+                            <div className="font-bold text-gray-900 text-sm">{item.referrerName}</div>
+                            <div className="text-[11px] text-[#1A73E8] font-mono mt-0.5 font-medium">
+                              {item.referrerPhone} • {item.referrerCode}
+                            </div>
                           </td>
-                          <td className="py-2.5 px-3 text-center">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                              item.rewardStatus === 'Đã thưởng'
+
+                          {/* 3. Người mới được giới thiệu */}
+                          <td className="py-3 px-4 border-r border-gray-100">
+                            <div className="font-semibold text-gray-900 text-sm">{item.newCustomerName}</div>
+                            <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                              {item.newCustomerPhone}
+                            </div>
+                          </td>
+
+                          {/* 4. Đơn hàng kích hoạt - có đầy đủ số tiền RO */}
+                          <td className="py-3 px-4 border-r border-gray-100">
+                            <div className="font-mono font-bold text-gray-900 text-sm">
+                              {item.orderCode}
+                            </div>
+                            <div className="text-xs font-semibold text-emerald-600 mt-0.5">
+                              {item.orderValue.toLocaleString('vi-VN')} đ ({item.orderStatus || 'Hoàn thành'})
+                            </div>
+                          </td>
+
+                          {/* 5. Mã thưởng TỰ ĐỘNG SINH */}
+                          <td className="py-3 px-4 border-r border-gray-100">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-bold text-xs">
+                              <Gift className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span>{item.rewardCode || item.referralCode}</span>
+                            </div>
+                          </td>
+
+                          {/* 6. Trị giá thưởng */}
+                          <td className="py-3 px-4 text-right font-bold text-emerald-600 text-sm border-r border-gray-100 whitespace-nowrap">
+                            {(item.rewardValue || 200000).toLocaleString('vi-VN')} đ
+                          </td>
+
+                          {/* 7. Hạn dùng */}
+                          <td className="py-3 px-4 text-center text-gray-600 font-medium border-r border-gray-100 whitespace-nowrap">
+                            {item.rewardExpiryDate || '23/11/2026'}
+                          </td>
+
+                          {/* 8. Trạng thái mã */}
+                          <td className="py-3 px-4 text-center border-r border-gray-100 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                              (item.rewardCodeStatus || 'Chưa sử dụng') === 'Chưa sử dụng'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-gray-100 text-gray-700 border-gray-200'
                             }`}>
-                              {item.rewardStatus}
+                              {item.rewardCodeStatus || 'Chưa sử dụng'}
                             </span>
+                          </td>
+
+                          {/* 9. Thao tác: Chép mã */}
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const codeToCopy = item.rewardCode || item.referralCode || '';
+                                navigator.clipboard.writeText(codeToCopy);
+                                setCopiedRewardCode(item.id);
+                                setTimeout(() => setCopiedRewardCode(null), 2000);
+                              }}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
+                                copiedRewardCode === item.id
+                                  ? 'bg-emerald-600 text-white border-emerald-600'
+                                  : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300 hover:border-gray-400 shadow-2xs'
+                              }`}
+                            >
+                              {copiedRewardCode === item.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Đã chép</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>Chép mã</span>
+                                </>
+                              )}
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -9062,20 +9188,16 @@ export const DiscountManagementModule: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between shrink-0">
-              <div className="text-xs text-gray-500">
-                Hiển thị <span className="font-bold text-gray-700">{filteredReferralHistory.length}</span> / <span className="font-bold text-gray-700">{referralHistoryList.length}</span> đơn hoàn thành
+              {/* Table Footer */}
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+                <div>
+                  Hiển thị <span className="font-bold text-gray-800">{filteredReferralHistory.length}</span> / <span className="font-bold text-gray-800">{referralHistoryList.length}</span> bản ghi
+                </div>
+                <div className="text-[11px] text-gray-400">
+                  Dữ liệu đồng bộ tự động theo thời gian thực từ phân hệ Lệnh sửa chữa (RO)
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsReferralHistoryModalOpen(false)}
-                className="px-5 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-              >
-                Đóng
-              </button>
             </div>
           </div>
         </div>

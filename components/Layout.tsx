@@ -181,7 +181,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
 
         {/* Version Footer */}
         <div className="px-6 py-3 border-t border-gray-200 text-base font-bold text-red-600">
-          v.0.1.5
+          v.0.1.6
         </div>
       </aside>
 
