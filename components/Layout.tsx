@@ -135,7 +135,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
             </svg>
             <span className="text-sm font-medium">Khách hàng tiềm năng</span>
           </div>
-          <div className="flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors text-gray-600 hover:bg-gray-100">
+          <div 
+            onClick={() => onNavigate?.('customer_bookings')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'customer_bookings' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'customer_bookings' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
             <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -196,10 +202,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
             {currentView === 'customers' && (
               <h1 className="text-xl font-bold text-gray-800 mr-8">Khách hàng</h1>
             )}
+            {currentView === 'customer_bookings' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Lịch hẹn Khách đặt</h1>
+            )}
             {currentView === 'discount_management' && (
               <h1 className="text-xl font-bold text-gray-800 mr-8">Quản lý chiết khấu</h1>
             )}
-            <div className={`relative w-[400px] ${currentView === 'repair_service' || currentView === 'customers' || currentView === 'discount_management' ? '' : 'mx-auto'}`}>
+            <div className={`relative w-[400px] ${currentView === 'repair_service' || currentView === 'customers' || currentView === 'customer_bookings' || currentView === 'discount_management' ? '' : 'mx-auto'}`}>
               <input 
                 type="text" 
                 placeholder="Tìm biển số xe" 
