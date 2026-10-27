@@ -18,13 +18,14 @@ import { RepairService } from './components/RepairService';
 import { EventsModule } from './components/EventsModule';
 import { PotentialCustomersModule } from './components/PotentialCustomersModule';
 import { CustomersModule } from './components/CustomersModule';
+import { CustomerBookingsModule } from './components/CustomerBookingsModule';
 import { DiscountManagementModule } from './components/DiscountManagementModule';
 import { RegistrationApprovalModule } from './components/RegistrationApprovalModule';
 import { OrderProvider } from './context/OrderContext';
 
 const App: React.FC = () => {
   const [productType, setProductType] = useState<ProductType>(ProductType.SPARE_PART);
-  const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'customers' | 'discount_management' | 'registration_approval'>('categories');
+  const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'customer_bookings' | 'customers' | 'discount_management' | 'registration_approval'>('categories');
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
 
   return (
@@ -56,6 +57,8 @@ const App: React.FC = () => {
           <EventsModule />
         ) : currentView === 'potential_customers' ? (
           <PotentialCustomersModule />
+        ) : currentView === 'customer_bookings' ? (
+          <CustomerBookingsModule />
         ) : currentView === 'customers' ? (
           <CustomersModule />
         ) : currentView === 'discount_management' ? (

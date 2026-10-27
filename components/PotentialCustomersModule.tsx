@@ -281,7 +281,7 @@ const MOCK_POTENTIAL_CUSTOMERS: PotentialCustomerItem[] = [
     registrationDate: '28/07/2024',
     appointmentDate: '30/07/2024',
     appointmentTimeSlot: '14:00 - 16:00',
-    status: 'Xe đã đến',
+    status: 'Đã xác nhận',
     address: '340 Cộng Hòa, Quận Tân Bình, HCM',
     link: 'https://dumuc.com.vn/campaign/diagnostic',
     startDate: '25/07/2024',
@@ -305,7 +305,7 @@ const MOCK_POTENTIAL_CUSTOMERS: PotentialCustomerItem[] = [
     registrationDate: '08/08/2024',
     appointmentDate: '11/08/2024',
     appointmentTimeSlot: '10:00 - 12:00',
-    status: 'Bỏ hẹn',
+    status: 'Đã hủy',
     address: '56 Điện Biên Phủ, Quận Thanh Khê, Đà Nẵng',
     link: 'https://dumuc.com.vn/campaign/genuine-parts',
     startDate: '05/08/2024',
@@ -329,7 +329,7 @@ const MOCK_POTENTIAL_CUSTOMERS: PotentialCustomerItem[] = [
     registrationDate: '16/08/2024',
     appointmentDate: '19/08/2024',
     appointmentTimeSlot: '15:00 - 17:00',
-    status: 'Xe đã đến',
+    status: 'Đã xác nhận',
     address: '108 Nguyễn Trãi, Quận Thanh Xuân, Hà Nội',
     link: 'https://dumuc.com.vn/campaign/full-care',
     startDate: '15/08/2024',
@@ -1031,8 +1031,6 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
               <option value="Tất cả">Trạng thái</option>
               <option value="Chờ xác nhận">Chờ xác nhận</option>
               <option value="Đã xác nhận">Đã xác nhận</option>
-              <option value="Xe đã đến">Xe đã đến</option>
-              <option value="Bỏ hẹn">Bỏ hẹn</option>
               <option value="Đã hủy">Đã hủy</option>
               <option value="Chờ xóa">Chờ xóa</option>
             </select>
@@ -1375,8 +1373,6 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                     >
                       <option value="Chờ xác nhận">Chờ xác nhận</option>
                       <option value="Đã xác nhận">Đã xác nhận</option>
-                      <option value="Xe đã đến">Xe đã đến</option>
-                      <option value="Bỏ hẹn">Bỏ hẹn</option>
                       <option value="Đã hủy">Đã hủy</option>
                       <option value="Chờ xóa">Chờ xóa</option>
                     </select>
@@ -1975,8 +1971,6 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                       >
                         <option value="Chờ xác nhận">Chờ xác nhận</option>
                         <option value="Đã xác nhận">Đã xác nhận</option>
-                        <option value="Xe đã đến">Xe đã đến</option>
-                        <option value="Bỏ hẹn">Bỏ hẹn</option>
                         <option value="Đã hủy">Đã hủy</option>
                         <option value="Chờ xóa">Chờ xóa</option>
                       </select>
