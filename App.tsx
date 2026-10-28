@@ -18,7 +18,11 @@ import { RepairService } from './components/RepairService';
 import { EventsModule } from './components/EventsModule';
 import { PotentialCustomersModule } from './components/PotentialCustomersModule';
 import { CustomersModule } from './components/CustomersModule';
-import { CustomerBookingsModule } from './components/CustomerBookingsModule';
+import {
+  CustomerBookingsModule,
+  CustomerBookingRecord,
+  INITIAL_CUSTOMER_BOOKINGS,
+} from './components/CustomerBookingsModule';
 import { DiscountManagementModule } from './components/DiscountManagementModule';
 import { RegistrationApprovalModule } from './components/RegistrationApprovalModule';
 import { OrderProvider } from './context/OrderContext';
@@ -27,6 +31,24 @@ const App: React.FC = () => {
   const [productType, setProductType] = useState<ProductType>(ProductType.SPARE_PART);
   const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'customer_bookings' | 'customers' | 'discount_management' | 'registration_approval'>('categories');
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
+  const [customerBookings, setCustomerBookings] = useState<CustomerBookingRecord[]>(
+    INITIAL_CUSTOMER_BOOKINGS
+  );
+  const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
+
+  const handleCreateCustomerBooking = (
+    bookingData: Omit<CustomerBookingRecord, 'id' | 'bookingCode'>
+  ) => {
+    setCustomerBookings((prev) => {
+      const nextNum = String(prev.length + 1).padStart(2, '0');
+      const newRecord: CustomerBookingRecord = {
+        ...bookingData,
+        id: `cb-${Date.now()}`,
+        bookingCode: `LH-241027-${nextNum}`,
+      };
+      return [newRecord, ...prev];
+    });
+  };
 
   return (
     <OrderProvider>
@@ -56,9 +78,18 @@ const App: React.FC = () => {
         ) : currentView === 'events' ? (
           <EventsModule />
         ) : currentView === 'potential_customers' ? (
-          <PotentialCustomersModule />
+          <PotentialCustomersModule
+            onCreateCustomerBooking={handleCreateCustomerBooking}
+            bookingCounts={bookingCounts}
+            setBookingCounts={setBookingCounts}
+            customerBookings={customerBookings}
+            setCustomerBookings={setCustomerBookings}
+          />
         ) : currentView === 'customer_bookings' ? (
-          <CustomerBookingsModule />
+          <CustomerBookingsModule
+            bookings={customerBookings}
+            setBookings={setCustomerBookings}
+          />
         ) : currentView === 'customers' ? (
           <CustomersModule />
         ) : currentView === 'discount_management' ? (

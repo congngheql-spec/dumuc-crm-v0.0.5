@@ -2,6 +2,11 @@ import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Filter, X, FileSearch, Inbox, Calendar, CalendarPlus, HelpCircle, ChevronDown, Settings, Download, Mail, User, Paperclip, MessageSquarePlus, Phone, Building2, Wrench, MessageCircle, Hourglass, ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle, Globe, MapPin } from 'lucide-react';
 import { EventSettings } from './EventSettings';
 import { HistoryItem, TaskItem, ActivityItem } from './EventsModule';
+import {
+  CustomerBookingsModule,
+  CustomerBookingRecord,
+  INITIAL_CUSTOMER_BOOKINGS,
+} from './CustomerBookingsModule';
 
 export type PotentialCustomerStatus = 'Chờ xác nhận' | 'Đã xác nhận' | 'Xe đã đến' | 'Bỏ hẹn' | 'Đã hủy' | 'Chờ xóa';
 export type PotentialCustomerSource = 'Facebook' | 'Google Maps' | 'Zalo OA' | 'Website' | 'TikTok';
@@ -22,6 +27,96 @@ export const DEMAND_OPTIONS: PotentialCustomerDemand[] = [
   'Đảo lốp',
   'Căn chỉnh thước lái',
   'Chẩn đoán tổng quát',
+];
+
+export const MASTER_CAR_MODELS: string[] = [
+  'Mazda - CX-5',
+  'Mazda - Mazda 3',
+  'Mazda - CX-8',
+  'Toyota - Vios',
+  'Toyota - Corolla Cross',
+  'Toyota - Camry',
+  'Toyota - Fortuner',
+  'Toyota - Innova Cross',
+  'Ford - Ranger',
+  'Ford - Everest',
+  'Ford - Territory',
+  'Honda - CR-V',
+  'Honda - City',
+  'Honda - Civic',
+  'Hyundai - SantaFe',
+  'Hyundai - Tucson',
+  'Hyundai - Accent',
+  'Kia - Seltos',
+  'Kia - Carnival',
+  'Kia - Sonet',
+  'Mercedes-Benz - C200',
+  'Mercedes-Benz - GLC 300',
+  'BMW - 320i',
+  'Mitsubishi - Xpander',
+  'VinFast - VF 8',
+  'VinFast - VF 5',
+];
+
+export const MASTER_LICENSE_PLATES: { plate: string; carModel: string }[] = [
+  { plate: '51K-889.21', carModel: 'Mazda - CX-5' },
+  { plate: '30H-665.43', carModel: 'Ford - Ranger' },
+  { plate: '51A-992.18', carModel: 'Mercedes-Benz - C200' },
+  { plate: '60A-773.12', carModel: 'Toyota - Vios' },
+  { plate: '51H-123.99', carModel: 'Hyundai - SantaFe' },
+  { plate: '51G-456.78', carModel: 'Honda - CR-V' },
+  { plate: '30K-112.89', carModel: 'Toyota - Corolla Cross' },
+  { plate: '43A-556.12', carModel: 'Kia - Carnival' },
+  { plate: '65A-234.56', carModel: 'Mitsubishi - Xpander' },
+];
+
+export const CUSTOMER_VEHICLES_MAP: Record<
+  string,
+  { plate: string; carModel: string }[]
+> = {
+  'pc-1': [
+    { plate: '51K-889.21', carModel: 'Mazda - CX-5' },
+    { plate: '51G-456.78', carModel: 'Honda - CR-V' },
+  ],
+  'pc-2': [
+    { plate: '30H-665.43', carModel: 'Ford - Ranger' },
+    { plate: '30K-112.89', carModel: 'Toyota - Corolla Cross' },
+  ],
+  'pc-3': [
+    { plate: '51A-992.18', carModel: 'Mercedes-Benz - C200' },
+    { plate: '51H-123.99', carModel: 'Hyundai - SantaFe' },
+  ],
+  'pc-4': [
+    { plate: '60A-773.12', carModel: 'Toyota - Vios' },
+    { plate: '43A-556.12', carModel: 'Kia - Carnival' },
+  ],
+  'pc-5': [
+    { plate: '30K-112.89', carModel: 'Toyota - Corolla Cross' },
+    { plate: '65A-234.56', carModel: 'Mitsubishi - Xpander' },
+  ],
+  'pc-6': [
+    { plate: '51H-123.99', carModel: 'Hyundai - SantaFe' },
+    { plate: '51K-889.21', carModel: 'Mazda - CX-5' },
+  ],
+  'pc-7': [
+    { plate: '43A-556.12', carModel: 'Kia - Carnival' },
+    { plate: '60A-773.12', carModel: 'Toyota - Vios' },
+  ],
+  'pc-8': [
+    { plate: '65A-234.56', carModel: 'Mitsubishi - Xpander' },
+    { plate: '30H-665.43', carModel: 'Ford - Ranger' },
+  ],
+};
+
+export const DEFAULT_SUGGESTED_SERVICE_TAGS: string[] = [
+  'Bảo dưỡng định kỳ',
+  'Rửa xe',
+  'Cân mâm',
+  'Đảo lốp',
+  'Căn chỉnh thước lái',
+  'Chẩn đoán tổng quát',
+  'Thay dầu máy',
+  'Kiểm tra hệ thống phanh',
 ];
 
 export interface ExistingCustomerRecord {
@@ -461,7 +556,25 @@ const MOCK_POTENTIAL_CUSTOMERS: PotentialCustomerItem[] = [
   }
 ];
 
-export const PotentialCustomersModule: React.FC = () => {
+interface PotentialCustomersModuleProps {
+  onCreateCustomerBooking?: (
+    booking: Omit<CustomerBookingRecord, 'id' | 'bookingCode'>
+  ) => void;
+  bookingCounts?: Record<string, number>;
+  setBookingCounts?: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  customerBookings?: CustomerBookingRecord[];
+  setCustomerBookings?: React.Dispatch<
+    React.SetStateAction<CustomerBookingRecord[]>
+  >;
+}
+
+export const PotentialCustomersModule: React.FC<PotentialCustomersModuleProps> = ({
+  onCreateCustomerBooking,
+  bookingCounts: externalBookingCounts,
+  setBookingCounts: externalSetBookingCounts,
+  customerBookings: externalCustomerBookings,
+  setCustomerBookings: externalSetCustomerBookings,
+}) => {
   const [events, setEvents] = useState<PotentialCustomerItem[]>(MOCK_POTENTIAL_CUSTOMERS);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [filterSearch, setFilterSearch] = useState('');
@@ -548,6 +661,33 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   const [openDemandDropdownId, setOpenDemandDropdownId] = useState<string | null>(null);
   const [duplicateCheckRecord, setDuplicateCheckRecord] = useState<PotentialCustomerItem | null>(null);
   const [duplicateCheckFilter, setDuplicateCheckFilter] = useState<'all' | 'phone' | 'email'>('all');
+
+  // State for full-screen "Tạo Lịch hẹn Khách đặt"
+  const [bookingModalRecord, setBookingModalRecord] = useState<PotentialCustomerItem | null>(null);
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingTimeSlot, setBookingTimeSlot] = useState('');
+  const [bookingPhone, setBookingPhone] = useState('');
+  const [bookingServiceRequest, setBookingServiceRequest] = useState('');
+  const [bookingSuggestedTags, setBookingSuggestedTags] = useState<string[]>([]);
+  const [bookingCarModels, setBookingCarModels] = useState<string[]>([]);
+  const [bookingCarModel, setBookingCarModel] = useState('');
+  const [isCarModelDropdownOpen, setIsCarModelDropdownOpen] = useState(false);
+  const [bookingLicensePlates, setBookingLicensePlates] = useState<string[]>([]);
+  const [bookingLicensePlate, setBookingLicensePlate] = useState('');
+  const [isLicensePlateDropdownOpen, setIsLicensePlateDropdownOpen] = useState(false);
+  const [bookingFormError, setBookingFormError] = useState('');
+  const [isBookingConfirmPopupOpen, setIsBookingConfirmPopupOpen] = useState(false);
+  const [internalBookingCounts, setInternalBookingCounts] = useState<Record<string, number>>({});
+  const bookingCounts = externalBookingCounts ?? internalBookingCounts;
+  const setBookingCounts = externalSetBookingCounts ?? setInternalBookingCounts;
+  const [internalCustomerBookings, setInternalCustomerBookings] = useState<
+    CustomerBookingRecord[]
+  >(INITIAL_CUSTOMER_BOOKINGS);
+  const customerBookings = externalCustomerBookings ?? internalCustomerBookings;
+  const setCustomerBookings =
+    externalSetCustomerBookings ?? setInternalCustomerBookings;
+  const [bookingListModalCustomer, setBookingListModalCustomer] =
+    useState<PotentialCustomerItem | null>(null);
 
   const handleToggleDemand = (id: string, demand: PotentialCustomerDemand) => {
     setEvents(events.map(evt => {
@@ -773,12 +913,111 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   };
 
   const handleCreateCustomerBooking = (record: PotentialCustomerItem) => {
-    addActivity(
-      record.id,
-      'task',
-      'Tạo Lịch hẹn Khách hàng đặt',
-      `Đã tạo lịch hẹn cho khách hàng ${record.fullName} (${record.phone})\nThời gian hẹn: ${record.appointmentTimeSlot} - ${record.appointmentDate}\nNhu cầu: ${record.demands.join(', ') || 'Chưa chọn'}`
+    setBookingModalRecord(record);
+    setBookingDate(record.appointmentDate || '');
+    setBookingTimeSlot(record.appointmentTimeSlot || '');
+    setBookingPhone(record.phone || '');
+    setBookingServiceRequest(
+      record.demands.length > 0 ? record.demands.join(', ') : ''
     );
+    const initialTags = Array.from(
+      new Set([
+        ...record.demands,
+        'Bảo dưỡng định kỳ',
+        'Rửa xe',
+        'Cân mâm',
+        'Đảo lốp',
+        'Căn chỉnh thước lái',
+        'Chẩn đoán tổng quát',
+      ])
+    );
+    setBookingSuggestedTags(initialTags);
+    setBookingCarModels([]);
+    setBookingCarModel('');
+    setBookingLicensePlates([]);
+    setBookingLicensePlate('');
+    setBookingFormError('');
+    setIsBookingConfirmPopupOpen(false);
+  };
+
+  const handleConfirmCreateCustomerBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingModalRecord) return;
+    if (!bookingDate.trim() || !bookingTimeSlot.trim() || !bookingPhone.trim()) {
+      setBookingFormError(
+        'Vui lòng nhập đầy đủ Ngày hẹn, Khung giờ hẹn và Điện thoại.'
+      );
+      return;
+    }
+    setBookingFormError('');
+    setIsBookingConfirmPopupOpen(true);
+  };
+
+  const handleExecuteCreateCustomerBooking = () => {
+    if (!bookingModalRecord) return;
+
+    const finalLicensePlates = Array.from(
+      new Set([
+        ...bookingLicensePlates,
+        ...(bookingLicensePlate.trim() ? [bookingLicensePlate.trim()] : []),
+      ])
+    );
+    const finalCarModels = Array.from(
+      new Set([
+        ...bookingCarModels,
+        ...(bookingCarModel.trim() ? [bookingCarModel.trim()] : []),
+      ])
+    );
+    const licensePlateStr = finalLicensePlates.join(', ');
+    const carModelStr = finalCarModels.join(', ');
+
+    addActivity(
+      bookingModalRecord.id,
+      'task',
+      'Tạo Lịch hẹn Khách đặt',
+      `Đã tạo lịch hẹn cho khách hàng ${bookingModalRecord.fullName} (${bookingPhone})\nThời gian hẹn: ${bookingTimeSlot} - ${bookingDate}\nYêu cầu dịch vụ: ${bookingServiceRequest || 'Chưa nhập'}\nDịch vụ góp ý: ${bookingSuggestedTags.join(', ') || 'Chưa chọn'}\nBiển số xe: ${licensePlateStr || 'Chưa nhập'} | Dòng xe: ${carModelStr || 'Chưa nhập'}`
+    );
+
+    setBookingCounts(prev => ({
+      ...prev,
+      [bookingModalRecord.id]: (prev[bookingModalRecord.id] || 0) + 1
+    }));
+
+    const newBookingPayload: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> = {
+      licensePlate: licensePlateStr || 'Chưa cập nhật',
+      carModel: carModelStr || 'Chưa cập nhật',
+      customerName: bookingModalRecord.fullName,
+      phone: bookingPhone.trim(),
+      appointmentDate: bookingDate.trim(),
+      appointmentTimeSlot: bookingTimeSlot.trim(),
+      serviceRequest: bookingServiceRequest.trim(),
+      suggestedServices: [...bookingSuggestedTags],
+      advisorName: 'Nguyễn Văn Tuấn',
+      source: 'Module Khách hàng tiềm năng',
+      sourceCode: bookingModalRecord.code,
+      campaignOrNote: bookingModalRecord.name,
+      status: 'Chờ xe tới',
+      potentialCustomerId: bookingModalRecord.id,
+    };
+
+    if (onCreateCustomerBooking) {
+      onCreateCustomerBooking(newBookingPayload);
+    } else {
+      setCustomerBookings((prev) => {
+        const nextNum = String(prev.length + 1).padStart(2, '0');
+        return [
+          {
+            ...newBookingPayload,
+            id: `cb-${Date.now()}`,
+            bookingCode: `LH-241027-${nextNum}`,
+          },
+          ...prev,
+        ];
+      });
+    }
+
+    setIsBookingConfirmPopupOpen(false);
+    setBookingModalRecord(null);
   };
 
   const handleApplyFilter = () => {
@@ -1214,6 +1453,29 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                         }}
                       >
                         <User className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className="relative flex items-center justify-center p-1.5 text-purple-600 hover:bg-purple-100 rounded-md transition-colors cursor-pointer"
+                        title="Danh sách Lịch hẹn Khách đặt"
+                        onClick={() => setBookingListModalCustomer(row)}
+                      >
+                        <Calendar className="w-4 h-4" />
+                        {customerBookings.filter(
+                          (b) =>
+                            b.source === 'Module Khách hàng tiềm năng' &&
+                            b.potentialCustomerId === row.id
+                        ).length > 0 && (
+                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                            {
+                              customerBookings.filter(
+                                (b) =>
+                                  b.source === 'Module Khách hàng tiềm năng' &&
+                                  b.potentialCustomerId === row.id
+                              ).length
+                            }
+                          </span>
+                        )}
                       </button>
                       <button 
                         className={`relative flex items-center justify-center p-1.5 rounded-md transition-colors ${(guestTasks[row.id]?.filter(t => !t.completed).length || 0) > 0 ? 'text-orange-500 hover:bg-orange-100' : 'text-gray-400 hover:bg-gray-100'}`} 
@@ -2533,6 +2795,851 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
           </div>
         );
       })()}
+
+      {/* Full-Screen "Tạo Lịch hẹn Khách đặt" Modal (2-Column Layout) */}
+      {bookingModalRecord && (() => {
+        const currentGuest =
+          events.find((e) => e.id === bookingModalRecord.id) ||
+          bookingModalRecord;
+        const guestDupInfo = getDuplicateInfo(currentGuest);
+        const filteredCarModels = MASTER_CAR_MODELS.filter((model) =>
+          model.toLowerCase().includes(bookingCarModel.toLowerCase())
+        );
+        const filteredLicensePlates = MASTER_LICENSE_PLATES.filter(
+          (item) =>
+            item.plate
+              .toLowerCase()
+              .includes(bookingLicensePlate.toLowerCase()) ||
+            item.carModel
+              .toLowerCase()
+              .includes(bookingLicensePlate.toLowerCase())
+        );
+
+        const handleToggleSuggestedTag = (tag: string) => {
+          setBookingSuggestedTags((prev) =>
+            prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+          );
+        };
+
+        const customerVehicles = CUSTOMER_VEHICLES_MAP[currentGuest.id] || [
+          { plate: '51K-889.21', carModel: 'Mazda - CX-5' },
+          { plate: '30H-665.43', carModel: 'Ford - Ranger' },
+        ];
+
+        const handleToggleLicensePlate = (plate: string) => {
+          setBookingLicensePlates((prev) =>
+            prev.includes(plate)
+              ? prev.filter((p) => p !== plate)
+              : [...prev, plate]
+          );
+        };
+
+        const handleToggleCarModel = (model: string) => {
+          setBookingCarModels((prev) =>
+            prev.includes(model)
+              ? prev.filter((m) => m !== model)
+              : [...prev, model]
+          );
+        };
+
+        return (
+          <div className="fixed inset-0 bg-white z-[55] flex flex-col w-screen h-screen overflow-hidden">
+            {/* Top Bar */}
+            <div className="px-6 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
+                  <CalendarPlus className="w-4 h-4" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  Tạo Lịch hẹn Khách đặt
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBookingModalRecord(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Main 2-Column Body */}
+            <div className="flex-1 flex min-h-0 overflow-hidden">
+              {/* Left Column: Identical to Guest Profile Modal, buttons hidden & all fields read-only */}
+              <div className="w-[54%] border-r border-gray-200 p-5 flex flex-col justify-between overflow-hidden bg-white">
+                <div className="space-y-5 overflow-hidden">
+                  {/* Top Identity (Read-only, buttons hidden) */}
+                  <div className="space-y-3 pb-4 border-b border-gray-100">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-0.5">
+                          {currentGuest.fullName}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          Ngày tạo:{' '}
+                          <span className="font-medium text-gray-700">
+                            {currentGuest.registrationDate}
+                          </span>
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg border ${
+                          currentGuest.status === 'Xe đã đến'
+                            ? 'bg-green-100 text-green-700 border-green-200'
+                            : currentGuest.status === 'Đã xác nhận'
+                            ? 'bg-blue-100 text-blue-700 border-blue-200'
+                            : currentGuest.status === 'Chờ xác nhận'
+                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                            : currentGuest.status === 'Bỏ hẹn'
+                            ? 'bg-orange-100 text-orange-700 border-orange-200'
+                            : currentGuest.status === 'Chờ xóa'
+                            ? 'bg-gray-200 text-gray-700 border-gray-300'
+                            : 'bg-red-100 text-red-700 border-red-200'
+                        }`}
+                      >
+                        {currentGuest.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* THÔNG TIN CHUNG (Read-only) */}
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                      THÔNG TIN CHUNG
+                    </h4>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+                      <div
+                        className={`p-2.5 rounded-lg border ${
+                          guestDupInfo.isPhoneDuplicate
+                            ? 'bg-red-50/60 border-red-200'
+                            : 'bg-gray-50 border-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1.5 mb-1 whitespace-nowrap">
+                          <span className="text-xs text-gray-500 shrink-0">
+                            Số điện thoại
+                          </span>
+                          {guestDupInfo.isPhoneDuplicate && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[11px] font-semibold whitespace-nowrap shrink-0">
+                              <ShieldAlert className="w-3 h-3 shrink-0 text-red-600" />
+                              <span className="whitespace-nowrap">
+                                Trùng:{' '}
+                                {guestDupInfo.matchedCustomers
+                                  .filter((m) => m.phoneMatch)
+                                  .map((m) => m.customer.customerName)
+                                  .join(', ')}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="font-semibold text-gray-800 flex items-center gap-2 whitespace-nowrap">
+                          <Phone
+                            className={`w-3.5 h-3.5 shrink-0 ${
+                              guestDupInfo.isPhoneDuplicate
+                                ? 'text-red-500'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                          <span
+                            className={`whitespace-nowrap ${
+                              guestDupInfo.isPhoneDuplicate
+                                ? 'text-red-700'
+                                : ''
+                            }`}
+                          >
+                            {currentGuest.phone}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`p-2.5 rounded-lg border ${
+                          guestDupInfo.isEmailDuplicate
+                            ? 'bg-red-50/60 border-red-200'
+                            : 'bg-gray-50 border-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1.5 mb-1 whitespace-nowrap">
+                          <span className="text-xs text-gray-500 shrink-0">
+                            Email
+                          </span>
+                          {guestDupInfo.isEmailDuplicate && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[11px] font-semibold whitespace-nowrap shrink-0">
+                              <ShieldAlert className="w-3 h-3 shrink-0 text-red-600" />
+                              <span className="whitespace-nowrap">
+                                Trùng:{' '}
+                                {
+                                  guestDupInfo.matchedCustomers.filter(
+                                    (m) => m.emailMatch
+                                  ).length
+                                }{' '}
+                                records
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className="font-semibold text-gray-800 flex items-center gap-2 whitespace-nowrap"
+                          title={currentGuest.email}
+                        >
+                          <Mail
+                            className={`w-3.5 h-3.5 shrink-0 ${
+                              guestDupInfo.isEmailDuplicate
+                                ? 'text-red-500'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                          <span
+                            className={`whitespace-nowrap ${
+                              guestDupInfo.isEmailDuplicate
+                                ? 'text-red-700'
+                                : ''
+                            }`}
+                          >
+                            {currentGuest.email}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-1">
+                          Trạng thái cuộc gọi
+                        </div>
+                        <div className="font-semibold text-gray-800">
+                          {currentGuest.callStatus}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-1">
+                          Kết quả cuộc gọi
+                        </div>
+                        <div className="font-semibold text-gray-800">
+                          {currentGuest.callResult}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-0.5">
+                          Nguồn
+                        </div>
+                        <div className="flex items-center gap-2 font-semibold text-gray-800">
+                          {renderSourceIcon(currentGuest.source)}
+                          <span>{currentGuest.source}</span>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-0.5">
+                          Mã người dùng (Kênh)
+                        </div>
+                        <div className="font-mono font-semibold text-gray-800">
+                          {currentGuest.channelUserCode}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-0.5">
+                          Mã chiến dịch
+                        </div>
+                        <div className="font-semibold text-[#1A73E8]">
+                          {currentGuest.code}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-0.5">
+                          Tên chiến dịch
+                        </div>
+                        <div
+                          className="font-semibold text-gray-800 truncate"
+                          title={currentGuest.name}
+                        >
+                          {currentGuest.name}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-0.5">
+                          Ngày hẹn
+                        </div>
+                        <div className="font-semibold text-gray-800 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          <span>{currentGuest.appointmentDate}</span>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-0.5">
+                          Khung giờ hẹn
+                        </div>
+                        <div className="font-semibold text-gray-800">
+                          {currentGuest.appointmentTimeSlot}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                        <div className="text-xs text-gray-500 mb-1">
+                          Nhu cầu
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {currentGuest.demands.length === 0 ? (
+                            <span className="text-xs text-gray-400">
+                              Chưa chọn nhu cầu
+                            </span>
+                          ) : (
+                            currentGuest.demands.map((d) => (
+                              <span
+                                key={d}
+                                className="px-2 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-xs font-medium"
+                              >
+                                {d}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Booking Form */}
+              <div className="flex-1 flex flex-col min-w-0 bg-gray-50/40 overflow-y-auto p-6">
+                <form
+                  onSubmit={handleConfirmCreateCustomerBooking}
+                  className="bg-white border border-gray-200 rounded-xl shadow-xs p-6 space-y-5 max-w-2xl"
+                >
+                  <div className="border-b border-gray-100 pb-3">
+                    <h3 className="text-base font-bold text-gray-900">
+                      Thông tin tạo Lịch hẹn Khách đặt
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Kiểm tra và bổ sung thông tin lịch hẹn cho khách hàng{' '}
+                      <span className="font-semibold text-gray-700">
+                        {currentGuest.fullName}
+                      </span>
+                    </p>
+                  </div>
+
+                  {bookingFormError && (
+                    <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-medium rounded-lg">
+                      {bookingFormError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Ngày hẹn */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Ngày hẹn <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          placeholder="DD/MM/YYYY"
+                          value={bookingDate}
+                          onChange={(e) => {
+                            setBookingDate(e.target.value);
+                            setBookingFormError('');
+                          }}
+                          className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
+                        />
+                        <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Khung giờ hẹn */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Khung giờ hẹn <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="VD: 08:00 - 10:00"
+                        value={bookingTimeSlot}
+                        onChange={(e) => {
+                          setBookingTimeSlot(e.target.value);
+                          setBookingFormError('');
+                        }}
+                        className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Điện thoại */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                      Điện thoại <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3 pointer-events-none" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nhập số điện thoại..."
+                        value={bookingPhone}
+                        onChange={(e) => {
+                          setBookingPhone(e.target.value);
+                          setBookingFormError('');
+                        }}
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Yêu cầu dịch vụ: dạng text */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                      Yêu cầu dịch vụ
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Nhập yêu cầu dịch vụ của khách hàng..."
+                      value={bookingServiceRequest}
+                      onChange={(e) => setBookingServiceRequest(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15 resize-y"
+                    />
+                  </div>
+
+                  {/* Dịch vụ góp ý: dạng tags hiển thị sẵn 1 số cái */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                      Dịch vụ góp ý
+                    </label>
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex flex-wrap gap-2">
+                        {DEFAULT_SUGGESTED_SERVICE_TAGS.map((tag) => {
+                          const isSelected = bookingSuggestedTags.includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => handleToggleSuggestedTag(tag)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                                isSelected
+                                  ? 'bg-blue-50 text-[#1A73E8] border-blue-300 shadow-2xs'
+                                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <span>{tag}</span>
+                              {isSelected && (
+                                <X className="w-3 h-3 text-[#1A73E8]" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 items-start">
+                    {/* Left: Biển số xe (không bắt buộc - cho phép chọn nhiều) + Danh sách Xe sử dụng below it */}
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Biển số xe{' '}
+                          <span className="font-normal text-gray-400">
+                            (không bắt buộc - cho phép chọn nhiều)
+                          </span>
+                        </label>
+                        <div className="min-h-[42px] px-3 py-2 bg-white border border-gray-300 rounded-lg focus-within:border-[#1A73E8] focus-within:ring-2 focus-within:ring-[#1A73E8]/15 flex flex-wrap items-center gap-1.5 pr-8 relative">
+                          {bookingLicensePlates.map((plate) => (
+                            <span
+                              key={plate}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-xs font-semibold"
+                            >
+                              <span>{plate}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleLicensePlate(plate)}
+                                className="text-[#1A73E8] hover:text-blue-800 cursor-pointer"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                          <input
+                            type="text"
+                            placeholder={
+                              bookingLicensePlates.length === 0
+                                ? 'Chọn hoặc nhập biển số xe...'
+                                : 'Thêm biển số...'
+                            }
+                            value={bookingLicensePlate}
+                            onChange={(e) => {
+                              setBookingLicensePlate(e.target.value);
+                              setIsLicensePlateDropdownOpen(true);
+                            }}
+                            onFocus={() => setIsLicensePlateDropdownOpen(true)}
+                            onBlur={() =>
+                              setTimeout(
+                                () => setIsLicensePlateDropdownOpen(false),
+                                200
+                              )
+                            }
+                            onKeyDown={(e) => {
+                              if (
+                                e.key === 'Enter' &&
+                                bookingLicensePlate.trim()
+                              ) {
+                                e.preventDefault();
+                                const val = bookingLicensePlate.trim();
+                                if (!bookingLicensePlates.includes(val)) {
+                                  setBookingLicensePlates((prev) => [
+                                    ...prev,
+                                    val,
+                                  ]);
+                                }
+                                setBookingLicensePlate('');
+                              }
+                            }}
+                            className="flex-1 min-w-[120px] text-sm text-gray-800 outline-none bg-transparent"
+                          />
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                        {isLicensePlateDropdownOpen && (
+                          <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto py-1">
+                            {filteredLicensePlates.map((item) => {
+                              const isSelected = bookingLicensePlates.includes(
+                                item.plate
+                              );
+                              return (
+                                <div
+                                  key={item.plate}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleToggleLicensePlate(item.plate);
+                                    setBookingLicensePlate('');
+                                  }}
+                                  className={`px-3.5 py-2 text-sm hover:bg-blue-50/70 cursor-pointer flex items-center justify-between ${
+                                    isSelected
+                                      ? 'bg-blue-50/40 text-[#1A73E8]'
+                                      : 'text-gray-800'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      readOnly
+                                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
+                                    />
+                                    <span className="font-bold text-gray-900">
+                                      {item.plate}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-gray-500">
+                                    {item.carModel}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                            {bookingLicensePlate.trim() &&
+                              !MASTER_LICENSE_PLATES.some(
+                                (item) =>
+                                  item.plate.toLowerCase() ===
+                                  bookingLicensePlate.trim().toLowerCase()
+                              ) && (
+                                <div
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    const newPlate = bookingLicensePlate.trim();
+                                    if (
+                                      !bookingLicensePlates.includes(newPlate)
+                                    ) {
+                                      setBookingLicensePlates((prev) => [
+                                        ...prev,
+                                        newPlate,
+                                      ]);
+                                    }
+                                    setBookingLicensePlate('');
+                                    setIsLicensePlateDropdownOpen(false);
+                                  }}
+                                  className="px-3.5 py-2 text-xs text-[#1A73E8] bg-blue-50/50 hover:bg-blue-50 cursor-pointer font-medium border-t border-gray-100"
+                                >
+                                  + Thêm biển số mới: &quot;
+                                  {bookingLicensePlate.trim()}&quot;
+                                </div>
+                              )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Danh sách Xe sử dụng (hiển thị bên dưới field Biển số xe) */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Danh sách Xe sử dụng
+                        </label>
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                          <div className="flex flex-wrap gap-2">
+                            {customerVehicles.map((vehicle) => {
+                              const isTicked = bookingLicensePlates.includes(
+                                vehicle.plate
+                              );
+                              return (
+                                <button
+                                  key={`${vehicle.plate}-${vehicle.carModel}`}
+                                  type="button"
+                                  onClick={() =>
+                                    handleToggleLicensePlate(vehicle.plate)
+                                  }
+                                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                                    isTicked
+                                      ? 'bg-blue-50 text-[#1A73E8] border-blue-300 shadow-2xs'
+                                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isTicked}
+                                    readOnly
+                                    className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
+                                  />
+                                  <span>
+                                    {vehicle.plate} - {vehicle.carModel}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Dòng xe (không bắt buộc - cho phép chọn nhiều) */}
+                    <div className="relative">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Dòng xe{' '}
+                        <span className="font-normal text-gray-400">
+                          (không bắt buộc - cho phép chọn nhiều)
+                        </span>
+                      </label>
+                      <div className="min-h-[42px] px-3 py-2 bg-white border border-gray-300 rounded-lg focus-within:border-[#1A73E8] focus-within:ring-2 focus-within:ring-[#1A73E8]/15 flex flex-wrap items-center gap-1.5 pr-8 relative">
+                        {bookingCarModels.map((model) => (
+                          <span
+                            key={model}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-xs font-semibold"
+                          >
+                            <span>{model}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCarModel(model)}
+                              className="text-[#1A73E8] hover:text-blue-800 cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          type="text"
+                          placeholder={
+                            bookingCarModels.length === 0
+                              ? 'Gõ tìm Hiệu xe - Dòng xe...'
+                              : 'Thêm dòng xe...'
+                          }
+                          value={bookingCarModel}
+                          onChange={(e) => {
+                            setBookingCarModel(e.target.value);
+                            setIsCarModelDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsCarModelDropdownOpen(true)}
+                          onBlur={() =>
+                            setTimeout(
+                              () => setIsCarModelDropdownOpen(false),
+                              200
+                            )
+                          }
+                          className="flex-1 min-w-[120px] text-sm text-gray-800 outline-none bg-transparent"
+                        />
+                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                      </div>
+                      {isCarModelDropdownOpen && (
+                        <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto py-1">
+                          {filteredCarModels.length === 0 ? (
+                            <div className="px-3 py-2 text-xs text-gray-500">
+                              Không tìm thấy dòng xe trong Master data
+                            </div>
+                          ) : (
+                            filteredCarModels.map((model) => {
+                              const isSelected =
+                                bookingCarModels.includes(model);
+                              return (
+                                <div
+                                  key={model}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleToggleCarModel(model);
+                                    setBookingCarModel('');
+                                  }}
+                                  className={`px-3.5 py-2 text-sm hover:bg-blue-50/70 cursor-pointer flex items-center justify-between ${
+                                    isSelected
+                                      ? 'bg-blue-50/40 text-[#1A73E8]'
+                                      : 'text-gray-800'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      readOnly
+                                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
+                                    />
+                                    <span className="font-medium">{model}</span>
+                                  </div>
+                                  <span className="text-[11px] text-gray-400">
+                                    Master data
+                                  </span>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setBookingModalRecord(null)}
+                      className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-xs cursor-pointer"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                      Xác nhận Tạo
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Confirmation Pop-up: Xác nhận Tạo lịch hẹn */}
+            {isBookingConfirmPopupOpen && (
+              <div className="fixed inset-0 bg-black/55 backdrop-blur-[1px] flex items-center justify-center z-60 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden">
+                  {/* Header */}
+                  <div className="px-6 py-4 bg-blue-50/60 border-b border-blue-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#1A73E8] text-white flex items-center justify-center shadow-xs shrink-0">
+                        <CalendarPlus className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                        Xác nhận Tạo lịch hẹn
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsBookingConfirmPopupOpen(false)}
+                      className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-white/80 transition-colors cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Body */}
+                  <div className="px-6 py-5 space-y-3.5">
+                    <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 text-sm text-gray-800 leading-relaxed">
+                      Lịch hẹn sẽ được lưu vào{' '}
+                      <span className="font-bold text-[#1A73E8]">
+                        Module &quot;Lịch hẹn khách đặt&quot;
+                      </span>
+                      .
+                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed pl-1">
+                      Bạn vẫn có thể{' '}
+                      <span className="font-semibold text-gray-900 underline decoration-gray-300 underline-offset-2">
+                        chỉnh sửa
+                      </span>{' '}
+                      hoặc{' '}
+                      <span className="font-semibold text-gray-900 underline decoration-gray-300 underline-offset-2">
+                        xóa
+                      </span>{' '}
+                      lịch hẹn này bất kỳ lúc nào.
+                    </p>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsBookingConfirmPopupOpen(false)}
+                      className="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExecuteCreateCustomerBooking}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Xác nhận
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Full-Screen Modal: Danh sách Lịch hẹn Khách đặt (Filtered by selected Potential Customer) */}
+      {bookingListModalCustomer && (
+        <div className="fixed inset-0 bg-[#F8FAFC] z-50 flex flex-col w-screen h-screen overflow-hidden">
+          <div className="px-6 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  Danh sách Lịch hẹn Khách đặt
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Khách hàng:{' '}
+                  <span className="font-semibold text-gray-800">
+                    {bookingListModalCustomer.fullName}
+                  </span>{' '}
+                  • SĐT:{' '}
+                  <span className="font-semibold text-gray-800">
+                    {bookingListModalCustomer.phone}
+                  </span>{' '}
+                  • Mã chiến dịch:{' '}
+                  <span className="font-semibold text-[#1A73E8]">
+                    {bookingListModalCustomer.code}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBookingListModalCustomer(null)}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              title="Đóng"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <CustomerBookingsModule
+              bookings={customerBookings}
+              setBookings={setCustomerBookings}
+              filterPotentialCustomerId={bookingListModalCustomer.id}
+              defaultPotentialCustomer={bookingListModalCustomer}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
