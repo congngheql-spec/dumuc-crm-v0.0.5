@@ -993,7 +993,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
       serviceRequest: bookingServiceRequest.trim(),
       suggestedServices: [...bookingSuggestedTags],
       advisorName: 'Nguyễn Văn Tuấn',
-      source: 'Module Khách hàng tiềm năng',
+      source: 'Module Khách hàng quan tâm',
       sourceCode: bookingModalRecord.code,
       campaignOrNote: bookingModalRecord.name,
       status: 'Chờ xe tới',
@@ -1128,7 +1128,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     <div className="flex flex-col h-full bg-white font-sans">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">Khách hàng tiềm năng</h1>
+        <h1 className="text-xl font-bold text-gray-800">Khách hàng quan tâm</h1>
       </div>
 
       {/* Action Bar */}
@@ -1463,14 +1463,14 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                         <Calendar className="w-4 h-4" />
                         {customerBookings.filter(
                           (b) =>
-                            b.source === 'Module Khách hàng tiềm năng' &&
+                            b.source === 'Module Khách hàng quan tâm' &&
                             b.potentialCustomerId === row.id
                         ).length > 0 && (
                           <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                             {
                               customerBookings.filter(
                                 (b) =>
-                                  b.source === 'Module Khách hàng tiềm năng' &&
+                                  b.source === 'Module Khách hàng quan tâm' &&
                                   b.potentialCustomerId === row.id
                               ).length
                             }

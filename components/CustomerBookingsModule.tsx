@@ -28,11 +28,12 @@ import {
   Save,
   Edit3,
   CheckSquare,
+  Hourglass,
 } from 'lucide-react';
 
 export type BookingSourceType =
   | 'Hotline'
-  | 'Module Khách hàng tiềm năng'
+  | 'Module Khách hàng quan tâm'
   | 'Mobile App';
 export type BookingStatusType =
   | 'Chờ xe tới'
@@ -253,7 +254,7 @@ export const INITIAL_CUSTOMER_BOOKINGS: CustomerBookingRecord[] = [
     serviceRequest: 'Bảo dưỡng định kỳ, Cân chỉnh thước lái',
     suggestedServices: ['Bảo dưỡng định kỳ', 'Căn chỉnh thước lái'],
     advisorName: 'Nguyễn Văn Tuấn',
-    source: 'Module Khách hàng tiềm năng',
+    source: 'Module Khách hàng quan tâm',
     sourceCode: 'KHTN-2024-001',
     campaignOrNote: 'Chăm sóc xe mùa hè',
     status: 'Chờ xe tới',
@@ -290,7 +291,7 @@ export const INITIAL_CUSTOMER_BOOKINGS: CustomerBookingRecord[] = [
     advisorName: 'Lê Thanh Tùng',
     source: 'Mobile App',
     sourceCode: 'Khách tự đặt',
-    campaignOrNote: 'Du Mục Official App',
+    campaignOrNote: 'App Du Muc',
     status: 'Xe đã tới',
   },
   {
@@ -305,7 +306,7 @@ export const INITIAL_CUSTOMER_BOOKINGS: CustomerBookingRecord[] = [
     serviceRequest: 'Bảo dưỡng 40.000 Km',
     suggestedServices: ['Bảo dưỡng định kỳ', 'Đảo lốp', 'Cân mâm'],
     advisorName: 'Nguyễn Văn Tuấn',
-    source: 'Module Khách hàng tiềm năng',
+    source: 'Module Khách hàng quan tâm',
     sourceCode: 'KHTN-2024-004',
     campaignOrNote: 'Khuyến mãi phụ tùng',
     status: 'Bỏ hẹn',
@@ -324,7 +325,7 @@ export const INITIAL_CUSTOMER_BOOKINGS: CustomerBookingRecord[] = [
     advisorName: 'Trần Quốc Hùng',
     source: 'Mobile App',
     sourceCode: 'Khách tự đặt',
-    campaignOrNote: 'Du Mục Official App',
+    campaignOrNote: 'App Du Muc',
     status: 'Hoàn thành',
   },
 ];
@@ -340,7 +341,7 @@ const BOOKING_STATUS_OPTIONS: BookingStatusType[] = [
 
 const BOOKING_SOURCE_OPTIONS: BookingSourceType[] = [
   'Hotline',
-  'Module Khách hàng tiềm năng',
+  'Module Khách hàng quan tâm',
   'Mobile App',
 ];
 
@@ -410,6 +411,11 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
     hoveredCancelledByGarageBooking,
     setHoveredCancelledByGarageBooking,
   ] = useState<{
+    id: string;
+    top: number;
+    left: number;
+  } | null>(null);
+  const [hoveredAppDuMucBooking, setHoveredAppDuMucBooking] = useState<{
     id: string;
     top: number;
     left: number;
@@ -520,7 +526,7 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
     serviceRequest: '',
     suggestedServicesText: '',
     advisorName: 'Nguyễn Văn Tuấn',
-    source: 'Module Khách hàng tiềm năng',
+    source: 'Module Khách hàng quan tâm',
     sourceCode: '',
     campaignOrNote: '',
     status: 'Chờ xe tới',
@@ -981,7 +987,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     return bookings.filter((b) => {
       if (filterPotentialCustomerId) {
         if (
-          b.source !== 'Module Khách hàng tiềm năng' ||
+          b.source !== 'Module Khách hàng quan tâm' ||
           b.potentialCustomerId !== filterPotentialCustomerId
         ) {
           return false;
@@ -1580,7 +1586,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
               : ['Bảo dưỡng định kỳ'],
             advisorName: 'Nguyễn Văn Tuấn',
             source:
-              (cols[10] as BookingSourceType) || 'Module Khách hàng tiềm năng',
+              (cols[10] as BookingSourceType) || 'Module Khách hàng quan tâm',
             sourceCode: cols[11] || 'Tạo thủ công',
             campaignOrNote: cols[12] || '',
             status: (cols[13] as BookingStatusType) || 'Chờ xe tới',
@@ -1597,11 +1603,11 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
 
   const renderSourceCell = (source: BookingSourceType, createdBy?: string) => {
     switch (source) {
-      case 'Module Khách hàng tiềm năng':
+      case 'Module Khách hàng quan tâm':
         return (
           <div className="inline-flex items-center gap-2 font-bold text-gray-800">
             <span className="w-3.5 h-3.5 rounded-full bg-[#0070E0] border border-[#004C99] inline-block shrink-0" />
-            <span>Module Khách hàng tiềm năng</span>
+            <span>Module Khách hàng quan tâm</span>
           </div>
         );
       case 'Hotline':
@@ -1957,7 +1963,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                             booking.source === 'Mobile App';
                           return (
                             <span
-                              className="relative inline-flex items-center p-0.5"
+                              className="relative inline-flex items-center gap-0.5 p-0.5"
                               onMouseEnter={(e) => {
                                 if (!isMobileAppLocked) return;
                                 const rect =
@@ -1998,6 +2004,11 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                               >
                                 ✏️
                               </button>
+                              {isMobileAppLocked && (
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-600 border border-amber-300 text-[11px] font-black leading-none shrink-0 cursor-help">
+                                  !
+                                </span>
+                              )}
                             </span>
                           );
                         })()}
@@ -2010,7 +2021,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                             booking.source === 'Mobile App';
                           return (
                             <span
-                              className="relative group inline-flex items-center"
+                              className="relative group inline-flex items-center gap-0.5"
                               title={
                                 showDetailedGarageCancelTooltip
                                   ? undefined
@@ -2062,6 +2073,11 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                               >
                                 <XCircle className="w-4 h-4" />
                               </button>
+                              {showDetailedGarageCancelTooltip && (
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-600 border border-amber-300 text-[11px] font-black leading-none shrink-0 cursor-help">
+                                  !
+                                </span>
+                              )}
                               {isCancelledByGarage &&
                                 !showDetailedGarageCancelTooltip && (
                                   <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-gray-900 text-white whitespace-nowrap shadow-lg z-30">
@@ -2085,6 +2101,37 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                         >
                           <History className="w-4 h-4" />
                         </button>
+                        {(() => {
+                          const uncompletedCount =
+                            bookingTasks[booking.id]?.filter(
+                              (t) => !t.completed
+                            ).length || 0;
+                          return (
+                            <button
+                              type="button"
+                              className={`relative flex items-center justify-center p-1.5 rounded-md transition-colors cursor-pointer ${
+                                uncompletedCount > 0
+                                  ? 'text-orange-500 hover:bg-orange-100'
+                                  : 'text-gray-400 hover:bg-gray-100'
+                              }`}
+                              title="Lời nhắc chưa hoàn thành"
+                              onClick={() => {
+                                setActivityHistoryBookingRecord(booking);
+                                setActiveActivityTab('tasks');
+                                setBookingNoteContent('');
+                                setBookingTaskContent('');
+                                setEditingBookingTaskId(null);
+                              }}
+                            >
+                              <Hourglass className="w-4 h-4" />
+                              {uncompletedCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                  {uncompletedCount}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </td>
 
@@ -2118,9 +2165,35 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                           href="https://apps.apple.com/us/app/dumuc/id6813362339"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#1A73E8] hover:underline font-medium"
+                          className="inline-flex items-center gap-1.5 text-[#1A73E8] hover:underline font-medium"
+                          onMouseEnter={(e) => {
+                            const rect =
+                              e.currentTarget.getBoundingClientRect();
+                            const tooltipHeight = 110;
+                            const placeAbove =
+                              rect.bottom + tooltipHeight >
+                              window.innerHeight - 16;
+                            setHoveredAppDuMucBooking({
+                              id: booking.id,
+                              top: placeAbove
+                                ? Math.max(12, rect.top - tooltipHeight - 8)
+                                : rect.bottom + 8,
+                              left: Math.max(
+                                12,
+                                Math.min(window.innerWidth - 760, rect.left)
+                              ),
+                            });
+                          }}
+                          onMouseLeave={() =>
+                            setHoveredAppDuMucBooking((prev) =>
+                              prev?.id === booking.id ? null : prev
+                            )
+                          }
                         >
-                          Du Mục Official App
+                          <span>App Du Muc</span>
+                          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-600 border border-amber-300 text-[11px] font-black leading-none shrink-0">
+                            !
+                          </span>
                         </a>
                       ) : (
                         <>
@@ -4515,6 +4588,29 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
         </div>
       )}
 
+      {/* Tooltip khi rê chuột vào cụm từ "App Du Muc" ở cột Mã nguồn / Chiến dịch */}
+      {hoveredAppDuMucBooking && (
+        <div
+          style={{
+            top: hoveredAppDuMucBooking.top,
+            left: hoveredAppDuMucBooking.left,
+          }}
+          className="fixed z-90 w-max max-w-[98vw] bg-white rounded-xl shadow-2xl border border-blue-200 overflow-hidden pointer-events-none p-3 space-y-2 text-xs text-gray-700"
+        >
+          <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 whitespace-nowrap">
+            <span className="font-bold text-gray-900">Nguồn:</span> Khách hàng
+            đặt lịch qua{' '}
+            <span className="font-semibold text-[#1A73E8]">App Du Mục</span>{' '}
+            (Mạng xã hội Cộng đồng người lái xe — nhấn vào tên ứng dụng để tải
+            về).
+          </div>
+          <div className="px-3 py-2 bg-blue-50/70 rounded-lg border border-blue-200 text-gray-800 whitespace-nowrap">
+            <span className="font-bold text-[#1A73E8]">Việc cần làm:</span> Chủ
+            động liên hệ để đảm bảo khách đến đúng hẹn.
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -5921,7 +6017,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                             </span>
                           ) : currentBooking.source === 'Mobile App' ? (
                             <span className="text-[#1A73E8] font-semibold">
-                              Du Mục Official App
+                              App Du Muc
                             </span>
                           ) : (
                             <span>
