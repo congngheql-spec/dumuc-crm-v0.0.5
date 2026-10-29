@@ -54,6 +54,7 @@ import {
   Send,
   Smartphone,
   Gift,
+  BookOpen,
 } from 'lucide-react';
 import {
   EXISTING_CUSTOMERS_IN_MODULE,
@@ -212,6 +213,12 @@ export interface DiscountRecord {
   // Quản lý Voucher
   vouchersList?: VoucherItem[];
   referralCodeMethod?: 'phone' | 'email' | 'customer_code';
+
+  // Khu vực: Thông tin chiến dịch dành cho Telesales
+  telesalesGoal?: string;
+  telesalesKeywords?: string;
+  telesalesNewCustomerScript?: string;
+  telesalesExistingCustomerScript?: string;
 }
 
 const BRANCH_OPTIONS = [
@@ -2235,9 +2242,19 @@ export const INITIAL_REFERRAL_HISTORY: ReferralHistoryItem[] = [
   },
 ];
 
-export const DiscountManagementModule: React.FC = () => {
+export interface DiscountManagementModuleProps {
+  discounts?: DiscountRecord[];
+  setDiscounts?: React.Dispatch<React.SetStateAction<DiscountRecord[]>>;
+}
+
+export const DiscountManagementModule: React.FC<DiscountManagementModuleProps> = ({
+  discounts: externalDiscounts,
+  setDiscounts: externalSetDiscounts,
+}) => {
   // Khởi tạo 10 records mẫu đa dạng đầy đủ các trường hợp theo chuẩn form Thêm mới
-  const [discounts, setDiscounts] = useState<DiscountRecord[]>(INITIAL_DISCOUNTS);
+  const [internalDiscounts, setInternalDiscounts] = useState<DiscountRecord[]>(INITIAL_DISCOUNTS);
+  const discounts = externalDiscounts ?? internalDiscounts;
+  const setDiscounts = externalSetDiscounts ?? setInternalDiscounts;
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
   // Filter inputs
@@ -2705,6 +2722,55 @@ export const DiscountManagementModule: React.FC = () => {
   const [formDocuments, setFormDocuments] = useState<DocumentItem[]>([]);
   const [viewingContractProfileDoc, setViewingContractProfileDoc] = useState<DocumentItem | null>(null);
 
+  // Khu vực: Thông tin chiến dịch dành cho Telesales
+  const [formTelesalesGoal, setFormTelesalesGoal] = useState<string>('');
+  const [formTelesalesKeywords, setFormTelesalesKeywords] = useState<string>('');
+  const [formTelesalesNewCustomerScript, setFormTelesalesNewCustomerScript] = useState<string>('');
+  const [formTelesalesExistingCustomerScript, setFormTelesalesExistingCustomerScript] = useState<string>('');
+  const [isTelesalesIllustrationOpen, setIsTelesalesIllustrationOpen] = useState<boolean>(false);
+  const [telesalesAiTemplateIndex, setTelesalesAiTemplateIndex] = useState<number>(0);
+
+  const buildDiscountTelesalesTemplates = (
+    programName: string,
+    programCode: string,
+    category: DiscountCategory
+  ) => {
+    const title = programName?.trim() || `Chương trình ${category} Chăm sóc & Bảo dưỡng Xe`;
+    const code = programCode?.trim() || 'CK-GARAGE';
+
+    return [
+      {
+        goal: `• Mục tiêu chuyển đổi: Liên hệ tư vấn 100% danh sách khách hàng thuộc chương trình "${title}" (${code}), đạt tỷ lệ đặt lịch hẹn đến xưởng tối thiểu 35% – 45%.\n• Gia tăng số lượng RO sử dụng mã ưu đãi ${code} cho các hạng mục bảo dưỡng định kỳ, thay dầu nhớt, cân mâm, đảo lốp và kiểm tra an toàn tổng quát.\n• Thu thập đầy đủ thông tin Biển số xe, Dòng xe, Số ODO hiện tại và khung giờ khách dự kiến ghé Garage để bộ phận Cố vấn dịch vụ chuẩn bị tiếp đón.`,
+        keywords: `• Từ khóa trọng tâm: "Ưu đãi độc quyền mã ${code}", "Miễn phí kiểm tra an toàn 18 hạng mục", "Giữ khoang dịch vụ ưu tiên – Không chờ đợi", "Phụ tùng chính hãng – Báo giá minh bạch".\n• Thông điệp cốt lõi: Chủ động bảo dưỡng định kỳ kết hợp áp dụng chương trình "${title}" giúp tiết kiệm chi phí tối đa và đảm bảo xe vận hành an toàn tuyệt đối.`,
+        newCustomerScript: `1. Chào hỏi & Giới thiệu chương trình:\n"Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] gọi từ Bộ phận Chăm sóc Khách hàng Garage. Hiện tại bên em đang triển khai chương trình '${title}' (Mã ưu đãi: ${code}) dành riêng cho khách hàng mới lần đầu trải nghiệm dịch vụ tại xưởng ạ."\n\n2. Khai thác nhu cầu & Tư vấn quyền lợi:\n"Không biết hiện tại xe mình đang sử dụng là dòng xe gì và đã đến kỳ bảo dưỡng hay cần kiểm tra hạng mục nào chưa ạ? Khi đặt lịch trước qua chương trình này, Anh/Chị sẽ được áp dụng ngay ưu đãi chiết khấu trực tiếp trên hóa đơn kèm gói Kiểm tra chẩn đoán an toàn tổng quát 18 hạng mục hoàn toàn miễn phí ạ."\n\n3. Chốt lịch hẹn đến xưởng:\n"Để Anh/Chị không phải chờ đợi khi mang xe tới, em xin phép giữ trước khoang dịch vụ ưu tiên và kích hoạt mã '${code}' theo biển số xe của mình vào Thứ 7 hoặc Chủ nhật tuần này nhé ạ? Anh/Chị ghé khung giờ 08:30 hay 14:00 sẽ thuận tiện hơn ạ?"`,
+        existingCustomerScript: `1. Chào hỏi & Hỏi thăm tình trạng xe:\n"Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] gọi từ Garage nơi Anh/Chị từng bảo dưỡng xe ạ. Thời gian vừa qua xe mình vận hành có êm ái và ổn định không Anh/Chị?"\n\n2. Thông báo ưu đãi tri ân Khách hàng cũ:\n"Nhân dịp bên em triển khai chương trình '${title}' (${code}), em liên hệ để gửi tặng Anh/Chị suất ưu đãi tri ân dành cho khách hàng thân thiết. Khi mang xe ghé xưởng đợt này, ngoài mức chiết khấu trực tiếp của chương trình, Anh/Chị còn được miễn phí kiểm tra hệ thống phanh, gầm, ắc-quy và châm nước rửa kính miễn phí ạ."\n\n3. Chốt lịch hẹn cùng Kỹ thuật viên:\n"Theo lịch sử bảo dưỡng thì xe mình cũng sắp tới mốc kiểm tra định kỳ rồi ạ. Em hỗ trợ đặt lịch trước với Cố vấn dịch vụ quen thuộc cho xe mình vào tuần này luôn Anh/Chị nhé?"`,
+      },
+      {
+        goal: `• Tối ưu hiệu quả khai thác tệp khách hàng mục tiêu của chương trình "${title}" (${code}), nâng tỷ lệ khách đến xưởng đúng hẹn (Show-up rate) đạt trên 85%.\n• Thúc đẩy khách hàng sử dụng trọn gói combo Bảo dưỡng định kỳ + Chăm sóc xe chuyên sâu tận dụng ưu đãi chiết khấu.\n• Gửi tin nhắn xác nhận lịch hẹn kèm mã ưu đãi ${code} qua Zalo OA / Email ngay sau khi kết thúc cuộc gọi.`,
+        keywords: `• Từ khóa trọng tâm: "Tiết kiệm chi phí bảo dưỡng định kỳ", "Chẩn đoán điện tử công nghệ cao", "Cam kết chất lượng chuẩn hãng", "Áp dụng ngay mã ${code}".\n• Thông điệp cốt lõi: Đặt lịch hẹn trước chỉ 1 phút — Nhận trọn ưu đãi chiết khấu và tận hưởng dịch vụ chăm sóc xe chuyên nghiệp, nhanh chóng trong ngày.`,
+        newCustomerScript: `1. Mở đầu cuộc gọi:\n"Dạ xin chào Anh/Chị [Tên KH], em gọi từ Trung tâm Dịch vụ Ô tô Garage. Em liên hệ để thông báo quyền lợi ưu đãi thuộc chương trình '${title}' dành cho chủ xe khu vực mình ạ."\n\n2. Nêu bật giá trị ưu đãi:\n"Dạ trong thời gian diễn ra chương trình '${code}', khách hàng mới lần đầu mang xe đến xưởng sẽ được hưởng mức chiết khấu đặc biệt cho dịch vụ bảo dưỡng và phụ tùng thay thế, đồng thời được Kỹ thuật trưởng kiểm tra tổng thể gầm - máy - phanh miễn phí 100%. Hiện xe Anh/Chị đang ở khoảng bao nhiêu km (ODO) để em tra cứu định mức bảo dưỡng giúp mình ạ?"\n\n3. Đề xuất khung giờ đón tiếp:\n"Dạ vậy em xin phép đăng ký giữ suất ưu đãi mã '${code}' cho biển số xe của Anh/Chị nhé. Tuần này Anh/Chị tiện ghé xưởng vào ngày thường hay cuối tuần để em sắp xếp khoang dịch vụ ưu tiên ạ?"`,
+        existingCustomerScript: `1. Chào hỏi thân tình:\n"Dạ em chào Anh/Chị [Tên KH], rất vui được kết nối lại với Anh/Chị từ Garage ạ! Hôm nay bên em chính thức mở chương trình ưu đãi '${title}' (${code}) nên em gọi ngay để ưu tiên giữ suất cho xe của mình ạ."\n\n2. Tư vấn cá nhân hóa theo chu kỳ bảo dưỡng:\n"Dựa trên lần làm dịch vụ gần nhất tại xưởng, thời điểm này rất thích hợp để mình kiểm tra lại dầu động cơ, lọc gió, đảo lốp và cân chỉnh thước lái. Khi đặt lịch trong chương trình '${code}', khách hàng cũ bên em được giảm trực tiếp theo chính sách ưu đãi và tặng thêm gói khử khuẩn nội thất miễn phí ạ."\n\n3. Xác nhận lịch hẹn:\n"Em lên lịch hẹn giữ chỗ cho xe mình vào sáng Thứ 7 tuần này lúc 08:30 nhé Anh/Chị? Ngay sau cuộc gọi em sẽ gửi thông tin chi tiết qua Zalo để mình tiện theo dõi ạ."`,
+      },
+      {
+        goal: `• Đảm bảo 100% khách hàng trong phạm vi áp dụng của chương trình "${title}" (${code}) nắm rõ quyền lợi chiết khấu và thời hạn sử dụng ưu đãi.\n• Tăng giá trị trung bình trên mỗi lệnh sửa chữa (RO) thông qua việc tư vấn kết hợp các hạng mục bảo dưỡng thiết yếu.\n• Giảm tỷ lệ khách hủy hẹn/bỏ hẹn xuống dưới 10% bằng quy trình gọi xác nhận và nhắc lịch chuẩn hóa.`,
+        keywords: `• Từ khóa trọng tâm: "Số lượng suất ưu đãi có hạn", "Bảo hành dịch vụ uy tín", "Đội ngũ Cố vấn & Kỹ thuật viên tận tâm", "Đặc quyền chương trình ${code}".\n• Thông điệp cốt lõi: Chăm sóc xe đúng định kỳ với chi phí tối ưu nhất — An tâm trọn vẹn trên mọi cung đường.`,
+        newCustomerScript: `1. Chào hỏi & Xác nhận thông tin:\n"Dạ chào Anh/Chị [Tên KH], em là [Tên TVV] phụ trách chương trình ưu đãi '${title}' tại Garage. Em gọi điện để hỗ trợ Anh/Chị đăng ký nhận suất chiết khấu '${code}' dành cho xe của mình ạ."\n\n2. Tư vấn giải pháp & Giải đáp thắc mắc:\n"Dạ chương trình này hỗ trợ giảm trực tiếp chi phí bảo dưỡng/vật tư và miễn phí hoàn toàn công kiểm tra tổng quát ban đầu. Trước khi thực hiện bất kỳ hạng mục nào, Cố vấn dịch vụ đều báo giá minh bạch từng phần để Anh/Chị duyệt trước. Hiện tại Anh/Chị đang quan tâm nhất đến thay dầu bảo dưỡng hay kiểm tra hệ thống lốp - phanh ạ?"\n\n3. Chốt lịch hẹn & Gửi thông tin:\n"Dạ em xin phép ghi nhận lịch hẹn cho xe mình vào ngày [Ngày hẹn] khung giờ [Khung giờ] nhé ạ. Em sẽ gửi ngay mã ưu đãi '${code}' kèm định vị Google Maps của Garage qua Zalo cho Anh/Chị ạ!"`,
+        existingCustomerScript: `1. Chào hỏi & Kết nối khách hàng thân thiết:\n"Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] từ Bộ phận Chăm sóc Khách hàng Garage đây ạ. Em gọi để thông báo chương trình ưu đãi đặc biệt '${title}' (${code}) đang áp dụng cho các khách hàng đã đồng hành cùng xưởng ạ."\n\n2. Nêu quyền lợi cộng thêm:\n"Ngoài mức chiết khấu của chương trình '${code}', khách hàng hiện hữu khi đặt lịch trước còn được ưu tiên chọn khung giờ đẹp, nhận xe nhanh trong ngày và hưởng đầy đủ chính sách cộng dồn ưu đãi theo quy định của chương trình. Nếu Anh/Chị có thêm xe người thân trong gia đình cũng có thể đăng ký nhận ưu đãi đợt này luôn ạ."\n\n3. Chốt khung giờ đón tiếp:\n"Anh/Chị dự kiến đưa xe ghé xưởng vào buổi sáng hay buổi chiều trong tuần này để em báo trước với bộ phận Kỹ thuật chuẩn bị vật tư chính hãng cho xe mình ạ?"`,
+      },
+    ];
+  };
+
+  const handleRefreshTelesalesAiContent = () => {
+    const templates = buildDiscountTelesalesTemplates(formName, formCode, formCategory);
+    const nextIdx = (telesalesAiTemplateIndex + 1) % templates.length;
+    const selected = templates[nextIdx];
+    setTelesalesAiTemplateIndex(nextIdx);
+    setFormTelesalesGoal(selected.goal);
+    setFormTelesalesKeywords(selected.keywords);
+    setFormTelesalesNewCustomerScript(selected.newCustomerScript);
+    setFormTelesalesExistingCustomerScript(selected.existingCustomerScript);
+  };
+
   // Hồ sơ hợp đồng handlers
   const handleAddContractFileRow = () => {
     if (!viewingContractProfileDoc) return;
@@ -2961,6 +3027,14 @@ export const DiscountManagementModule: React.FC = () => {
     setFormVouchersList([]);
     setReferralCodeMethod('phone');
 
+    // Khu vực: Thông tin chiến dịch dành cho Telesales defaults
+    const defaultTpl = buildDiscountTelesalesTemplates('', `CK-${yyyy}-${nextNum}`, 'Chiết khấu')[0];
+    setFormTelesalesGoal(defaultTpl.goal);
+    setFormTelesalesKeywords(defaultTpl.keywords);
+    setFormTelesalesNewCustomerScript(defaultTpl.newCustomerScript);
+    setFormTelesalesExistingCustomerScript(defaultTpl.existingCustomerScript);
+    setTelesalesAiTemplateIndex(0);
+
     setFormError('');
     setShowStartDateInfo(false);
     setShowMinBuyQtyInfo(false);
@@ -3026,6 +3100,22 @@ export const DiscountManagementModule: React.FC = () => {
     setFormDocuments(discount.documents && discount.documents.length > 0 ? discount.documents : [createBlankDocumentItem()]);
     setFormVouchersList(discount.vouchersList || []);
     setReferralCodeMethod(discount.referralCodeMethod || 'phone');
+
+    // Khu vực: Thông tin chiến dịch dành cho Telesales
+    const defaultEditTpl = buildDiscountTelesalesTemplates(
+      discount.name,
+      discount.code,
+      discount.category || 'Chiết khấu'
+    )[0];
+    setFormTelesalesGoal(discount.telesalesGoal ?? defaultEditTpl.goal);
+    setFormTelesalesKeywords(discount.telesalesKeywords ?? defaultEditTpl.keywords);
+    setFormTelesalesNewCustomerScript(
+      discount.telesalesNewCustomerScript ?? defaultEditTpl.newCustomerScript
+    );
+    setFormTelesalesExistingCustomerScript(
+      discount.telesalesExistingCustomerScript ?? defaultEditTpl.existingCustomerScript
+    );
+    setTelesalesAiTemplateIndex(0);
 
     setFormError('');
     setShowStartDateInfo(false);
@@ -3142,6 +3232,12 @@ export const DiscountManagementModule: React.FC = () => {
       // Quản lý Voucher
       vouchersList: formVouchersList,
       referralCodeMethod: formCategory === 'Khách cũ giới thiệu Khách mới' ? referralCodeMethod : undefined,
+
+      // Khu vực: Thông tin chiến dịch dành cho Telesales
+      telesalesGoal: formTelesalesGoal,
+      telesalesKeywords: formTelesalesKeywords,
+      telesalesNewCustomerScript: formTelesalesNewCustomerScript,
+      telesalesExistingCustomerScript: formTelesalesExistingCustomerScript,
     };
 
     if (editingDiscount) {
@@ -7008,6 +7104,101 @@ export const DiscountManagementModule: React.FC = () => {
                 </div>
               </div>
 
+              {/* ================================================================= */}
+              {/* KHU VỰC: THÔNG TIN CHIẾN DỊCH DÀNH CHO TELESALES */}
+              {/* ================================================================= */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100 flex-wrap gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#1A73E8] flex items-center justify-center font-bold text-xs">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                        Thông tin chiến dịch dành cho Telesales
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsTelesalesIllustrationOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#1A73E8] border border-blue-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        Minh họa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRefreshTelesalesAiContent}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        A.I - Hoàn thiện nội dung dưới
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Field 1: Mục tiêu chương trình */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Mục tiêu chương trình
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={formTelesalesGoal}
+                      onChange={(e) => setFormTelesalesGoal(e.target.value)}
+                      placeholder="Nhập mục tiêu chương trình dành cho Telesales..."
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-800 leading-relaxed outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15 resize-y bg-white"
+                    />
+                  </div>
+
+                  {/* Field 2: Từ khóa & Thông điệp trọng tâm */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Từ khóa &amp; Thông điệp trọng tâm
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={formTelesalesKeywords}
+                      onChange={(e) => setFormTelesalesKeywords(e.target.value)}
+                      placeholder="Nhập từ khóa & thông điệp trọng tâm..."
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-800 leading-relaxed outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15 resize-y bg-white"
+                    />
+                  </div>
+
+                  {/* Field 3: Kịch bản gọi chi tiết (Khách hàng mới) */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Kịch bản gọi chi tiết (Khách hàng mới)
+                    </label>
+                    <textarea
+                      rows={7}
+                      value={formTelesalesNewCustomerScript}
+                      onChange={(e) => setFormTelesalesNewCustomerScript(e.target.value)}
+                      placeholder="Nhập kịch bản gọi chi tiết dành cho khách hàng mới..."
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-800 leading-relaxed outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15 resize-y bg-white"
+                    />
+                  </div>
+
+                  {/* Field 4: Kịch bản gọi chi tiết (Khách hàng cũ) */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Kịch bản gọi chi tiết (Khách hàng cũ)
+                    </label>
+                    <textarea
+                      rows={7}
+                      value={formTelesalesExistingCustomerScript}
+                      onChange={(e) => setFormTelesalesExistingCustomerScript(e.target.value)}
+                      placeholder="Nhập kịch bản gọi chi tiết dành cho khách hàng cũ..."
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-800 leading-relaxed outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15 resize-y bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Bottom Actions Bar */}
               <div className="flex items-center justify-end gap-3 pt-3">
                 <button
@@ -7029,6 +7220,162 @@ export const DiscountManagementModule: React.FC = () => {
                   {editingDiscount ? 'Cập nhật chương trình' : 'Lưu chương trình'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: MINH HỌA THÔNG TIN CHIẾN DỊCH DÀNH CHO TELESALES */}
+      {/* ========================================================================= */}
+      {isTelesalesIllustrationOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4"
+          onClick={() => setIsTelesalesIllustrationOpen(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#1A73E8] text-white flex items-center justify-center shadow-xs shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">
+                    Ví dụ minh họa chi tiết: Thông tin chiến dịch dành cho Telesales
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Mẫu tham khảo đầy đủ cho 4 trường thông tin hướng dẫn Telesales triển khai chương trình
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTelesalesIllustrationOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-white rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4 bg-gray-50/40">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Ví dụ Field 1: Mục tiêu chương trình */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-blue-100 text-[#1A73E8] rounded text-xs font-bold">
+                      Field 1
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Mục tiêu chương trình
+                    </h4>
+                  </div>
+                  <div className="text-xs text-gray-700 leading-relaxed space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p>
+                      <strong>• Mục tiêu chuyển đổi:</strong> Liên hệ 100% danh sách khách hàng thuộc diện áp dụng ưu đãi; đặt lịch hẹn thành công tối thiểu 35% – 45% khách hàng mang xe đến xưởng.
+                    </p>
+                    <p>
+                      <strong>• Hạng mục dịch vụ đẩy mạnh:</strong> Bảo dưỡng định kỳ các cấp (5.000km – 40.000km), thay dầu nhớt chính hãng, cân mâm bấm chì, đảo lốp, căn chỉnh thước lái 3D và kiểm tra hệ thống phanh/điều hòa.
+                    </p>
+                    <p>
+                      <strong>• Thông tin cần ghi nhận:</strong> Biển số xe, Dòng xe, Số ODO hiện tại, nhu cầu kiểm tra/sửa chữa và khung giờ khách đặt lịch ghé Garage.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ví dụ Field 2: Từ khóa & Thông điệp trọng tâm */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">
+                      Field 2
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Từ khóa &amp; Thông điệp trọng tâm
+                    </h4>
+                  </div>
+                  <div className="text-xs text-gray-700 leading-relaxed space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p>
+                      <strong>• Cụm từ khóa neo giá trị:</strong> &quot;Ưu đãi trực tiếp trên lệnh sửa chữa (RO)&quot;, &quot;Miễn phí 100% kiểm tra an toàn 18 hạng mục&quot;, &quot;Giữ khoang dịch vụ ưu tiên – Không chờ đợi&quot;, &quot;Báo giá minh bạch trước khi làm&quot;.
+                    </p>
+                    <p>
+                      <strong>• Thông điệp xuyên suốt:</strong> Chủ động bảo dưỡng định kỳ kết hợp áp dụng mã chiết khấu/voucher giúp tiết kiệm tối đa chi phí vận hành và bảo vệ an toàn cho cả gia đình.
+                    </p>
+                    <p>
+                      <strong>• Điểm nhấn thúc đẩy chốt lịch:</strong> Đặt lịch trước qua tổng đài được giữ suất ưu đãi và tặng kèm gói khử khuẩn nội thất / châm nước rửa kính miễn phí.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Ví dụ Field 3: Kịch bản gọi chi tiết (Khách hàng mới) */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
+                      Field 3
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Kịch bản gọi chi tiết (Khách hàng mới)
+                    </h4>
+                  </div>
+                  <div className="text-xs text-gray-700 leading-relaxed space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p>
+                      <strong>Bước 1 – Chào hỏi &amp; Giới thiệu ưu đãi (15 giây):</strong><br />
+                      &quot;Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] gọi từ Bộ phận Chăm sóc Khách hàng Garage. Hiện bên em đang triển khai chương trình ưu đãi [Tên Chương Trình] dành riêng cho khách hàng mới lần đầu trải nghiệm dịch vụ tại xưởng ạ.&quot;
+                    </p>
+                    <p>
+                      <strong>Bước 2 – Khai thác tình trạng xe &amp; Tư vấn quyền lợi (30 giây):</strong><br />
+                      &quot;Dạ hiện tại Anh/Chị đang sử dụng dòng xe gì và xe mình đang cần bảo dưỡng định kỳ hay kiểm tra hạng mục nào ạ? Khi đặt lịch qua chương trình này, Anh/Chị được tặng gói Kiểm tra an toàn tổng quát 18 hạng mục hoàn toàn miễn phí kèm mức chiết khấu trực tiếp trên hóa đơn dịch vụ ạ.&quot;
+                    </p>
+                    <p>
+                      <strong>Bước 3 – Xử lý băn khoăn &amp; Chốt khung giờ hẹn (30 giây):</strong><br />
+                      &quot;Để khi Anh/Chị đưa xe tới được ưu tiên vào khoang kỹ thuật ngay mà không phải chờ đợi, em xin phép kích hoạt mã ưu đãi theo biển số xe của mình vào sáng Thứ 7 (08:00 - 10:00) hoặc chiều Thứ 7 (14:00 - 16:00) tuần này nhé ạ? Ngay sau cuộc gọi em sẽ gửi tin nhắn Zalo xác nhận kèm định vị Google Maps của xưởng cho Anh/Chị ạ.&quot;
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ví dụ Field 4: Kịch bản gọi chi tiết (Khách hàng cũ) */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-bold">
+                      Field 4
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Kịch bản gọi chi tiết (Khách hàng cũ)
+                    </h4>
+                  </div>
+                  <div className="text-xs text-gray-700 leading-relaxed space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p>
+                      <strong>Bước 1 – Chào hỏi thân thiết &amp; Hỏi thăm sau dịch vụ (15 giây):</strong><br />
+                      &quot;Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] từ Garage nơi Anh/Chị đã từng làm dịch vụ cho xe [Biển số / Dòng xe] ạ. Thời gian vừa qua xe mình di chuyển có êm ái và ổn định không Anh/Chị?&quot;
+                    </p>
+                    <p>
+                      <strong>Bước 2 – Cá nhân hóa theo lịch sử &amp; Trao đặc quyền tri ân (30 giây):</strong><br />
+                      &quot;Dạ theo lịch sử bảo dưỡng tại xưởng thì xe mình cũng sắp đến mốc kiểm tra định kỳ tiếp theo rồi ạ. Nhân dịp bên em triển khai chương trình [Tên Chương Trình], Garage dành tặng riêng khách hàng thân thiết mã ưu đãi giảm trực tiếp chi phí bảo dưỡng/phụ tùng kèm suất kiểm tra thước lái &amp; đảo lốp miễn phí ạ.&quot;
+                    </p>
+                    <p>
+                      <strong>Bước 3 – Chốt lịch hẹn cùng Kỹ thuật viên quen thuộc (25 giây):</strong><br />
+                      &quot;Em hỗ trợ giữ lịch trước với Cố vấn dịch vụ và Kỹ thuật viên quen thuộc cho xe mình vào tuần này luôn Anh/Chị nhé? Anh/Chị ghé khung giờ 08:30 sáng hay 14:00 chiều sẽ thuận tiện công việc của mình hơn ạ?&quot;
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 bg-white border-t border-gray-200 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsTelesalesIllustrationOpen(false)}
+                className="inline-flex items-center gap-2 px-5 py-2 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Đã hiểu
+              </button>
             </div>
           </div>
         </div>

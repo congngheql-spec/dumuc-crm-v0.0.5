@@ -29,7 +29,9 @@ import {
   Edit3,
   CheckSquare,
   Hourglass,
+  BookOpen,
 } from 'lucide-react';
+import { INITIAL_DISCOUNTS } from './DiscountManagementModule';
 
 export type BookingSourceType =
   | 'Hotline'
@@ -345,6 +347,70 @@ const BOOKING_SOURCE_OPTIONS: BookingSourceType[] = [
   'Mobile App',
 ];
 
+export interface BookingNoteItem {
+  id: string;
+  content: string;
+  timestamp: string;
+  author: string;
+}
+
+export interface BookingTaskItem {
+  id: string;
+  content: string;
+  timestamp: string;
+  author: string;
+  completed: boolean;
+}
+
+export interface BookingActivityItem {
+  id: string;
+  action: string;
+  detail: string;
+  actor: string;
+  timestamp: string;
+}
+
+export const INITIAL_BOOKING_INTERNAL_NOTES: Record<string, BookingNoteItem[]> = {
+  'cb-1': [
+    {
+      id: 'bn-1',
+      content:
+        'Khách ưu tiên kiểm tra phanh và thay nhớt tổng hợp, cần chuẩn bị sẵn phụ tùng Mazda CX-5.',
+      timestamp: '27/10/2026 08:05',
+      author: 'quych@pbsofu.vn',
+    },
+  ],
+  'cb-2': [
+    {
+      id: 'bn-2',
+      content: 'Đã gọi xác nhận lịch hẹn, khách báo sẽ đến đúng khung giờ 09:30.',
+      timestamp: '27/10/2026 08:30',
+      author: 'quych@pbsofu.vn',
+    },
+  ],
+};
+
+export const INITIAL_BOOKING_TASKS: Record<string, BookingTaskItem[]> = {
+  'cb-1': [
+    {
+      id: 'bt-1',
+      content: 'Gọi nhắc khách trước giờ hẹn 1 tiếng và chuẩn bị khoang dịch vụ',
+      timestamp: '27/10/2026 08:10',
+      author: 'quych@pbsofu.vn',
+      completed: false,
+    },
+  ],
+  'cb-2': [
+    {
+      id: 'bt-2',
+      content: 'Kiểm tra tồn kho má phanh trước Honda CR-V trước khi xe tới',
+      timestamp: '27/10/2026 08:40',
+      author: 'quych@pbsofu.vn',
+      completed: true,
+    },
+  ],
+};
+
 interface CustomerBookingsModuleProps {
   bookings?: CustomerBookingRecord[];
   setBookings?: React.Dispatch<React.SetStateAction<CustomerBookingRecord[]>>;
@@ -356,6 +422,81 @@ interface CustomerBookingsModuleProps {
     fullName: string;
     phone: string;
   };
+  discounts?: any[];
+  bookingInternalNotes?: Record<string, BookingNoteItem[]>;
+  setBookingInternalNotes?: React.Dispatch<
+    React.SetStateAction<Record<string, BookingNoteItem[]>>
+  >;
+  bookingTasks?: Record<string, BookingTaskItem[]>;
+  setBookingTasks?: React.Dispatch<
+    React.SetStateAction<Record<string, BookingTaskItem[]>>
+  >;
+  bookingActivities?: Record<string, BookingActivityItem[]>;
+  setBookingActivities?: React.Dispatch<
+    React.SetStateAction<Record<string, BookingActivityItem[]>>
+  >;
+  guestHistory?: Record<
+    string,
+    Array<{ id: string; content: string; timestamp: string; author: string }>
+  >;
+  setGuestHistory?: React.Dispatch<
+    React.SetStateAction<
+      Record<
+        string,
+        Array<{ id: string; content: string; timestamp: string; author: string }>
+      >
+    >
+  >;
+  guestTasks?: Record<
+    string,
+    Array<{
+      id: string;
+      content: string;
+      timestamp: string;
+      author: string;
+      completed: boolean;
+    }>
+  >;
+  setGuestTasks?: React.Dispatch<
+    React.SetStateAction<
+      Record<
+        string,
+        Array<{
+          id: string;
+          content: string;
+          timestamp: string;
+          author: string;
+          completed: boolean;
+        }>
+      >
+    >
+  >;
+  guestActivityHistory?: Record<
+    string,
+    Array<{
+      id: string;
+      type: 'note' | 'task' | 'email';
+      action: string;
+      content: string;
+      timestamp: string;
+      author: string;
+    }>
+  >;
+  setGuestActivityHistory?: React.Dispatch<
+    React.SetStateAction<
+      Record<
+        string,
+        Array<{
+          id: string;
+          type: 'note' | 'task' | 'email';
+          action: string;
+          content: string;
+          timestamp: string;
+          author: string;
+        }>
+      >
+    >
+  >;
 }
 
 export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
@@ -363,7 +504,56 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
   setBookings: externalSetBookings,
   filterPotentialCustomerId,
   defaultPotentialCustomer,
+  discounts = INITIAL_DISCOUNTS,
+  bookingInternalNotes: externalBookingInternalNotes,
+  setBookingInternalNotes: externalSetBookingInternalNotes,
+  bookingTasks: externalBookingTasks,
+  setBookingTasks: externalSetBookingTasks,
+  bookingActivities: externalBookingActivities,
+  setBookingActivities: externalSetBookingActivities,
+  setGuestHistory,
+  setGuestTasks,
+  setGuestActivityHistory,
 }) => {
+  const [callScriptBookingRecord, setCallScriptBookingRecord] =
+    useState<CustomerBookingRecord | null>(null);
+
+  const getBookingCampaignTelesalesDetails = (booking: CustomerBookingRecord) => {
+    const rawCode = booking.sourceCode?.trim() || '';
+    const rawName = booking.campaignOrNote?.trim() || '';
+
+    const matchedDiscount = discounts.find(
+      (d) =>
+        (rawCode &&
+          (d.code?.toLowerCase() === rawCode.toLowerCase() ||
+            (d.discountCode &&
+              d.discountCode.toLowerCase() === rawCode.toLowerCase()))) ||
+        (rawName && d.name?.toLowerCase() === rawName.toLowerCase())
+    );
+
+    const title =
+      matchedDiscount?.name ||
+      rawName ||
+      'Chương trình Chăm sóc & Bảo dưỡng Xe';
+    const code = matchedDiscount?.code || rawCode || 'CK-GARAGE';
+
+    const defaultGoal = `• Mục tiêu chuyển đổi: Liên hệ tư vấn 100% danh sách khách hàng thuộc chương trình "${title}" (${code}), đạt tỷ lệ đặt lịch hẹn đến xưởng tối thiểu 35% – 45%.\n• Gia tăng số lượng RO sử dụng mã ưu đãi ${code} cho các hạng mục bảo dưỡng định kỳ, thay dầu nhớt, cân mâm, đảo lốp và kiểm tra an toàn tổng quát.\n• Thu thập đầy đủ thông tin Biển số xe, Dòng xe, Số ODO hiện tại và khung giờ khách dự kiến ghé Garage để bộ phận Cố vấn dịch vụ chuẩn bị tiếp đón.`;
+    const defaultKeywords = `• Từ khóa trọng tâm: "Ưu đãi độc quyền mã ${code}", "Miễn phí kiểm tra an toàn 18 hạng mục", "Giữ khoang dịch vụ ưu tiên – Không chờ đợi", "Phụ tùng chính hãng – Báo giá minh bạch".\n• Thông điệp cốt lõi: Chủ động bảo dưỡng định kỳ kết hợp áp dụng chương trình "${title}" giúp tiết kiệm chi phí tối đa và đảm bảo xe vận hành an toàn tuyệt đối.`;
+    const defaultNewScript = `1. Chào hỏi & Giới thiệu chương trình:\n"Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] gọi từ Bộ phận Chăm sóc Khách hàng Garage. Hiện tại bên em đang triển khai chương trình '${title}' (Mã chiến dịch: ${code}) dành riêng cho khách hàng mới lần đầu trải nghiệm dịch vụ tại xưởng ạ."\n\n2. Khai thác nhu cầu & Tư vấn quyền lợi:\n"Không biết hiện tại xe mình đang sử dụng là dòng xe gì và đã đến kỳ bảo dưỡng hay cần kiểm tra hạng mục nào chưa ạ? Khi đặt lịch trước qua chương trình này, Anh/Chị sẽ được áp dụng ngay ưu đãi chiết khấu trực tiếp trên hóa đơn kèm gói Kiểm tra chẩn đoán an toàn tổng quát 18 hạng mục hoàn toàn miễn phí ạ."\n\n3. Chốt lịch hẹn đến xưởng:\n"Để Anh/Chị không phải chờ đợi khi mang xe tới, em xin phép giữ trước khoang dịch vụ ưu tiên và kích hoạt mã '${code}' theo biển số xe của mình vào Thứ 7 hoặc Chủ nhật tuần này nhé ạ? Anh/Chị ghé khung giờ 08:30 hay 14:00 sẽ thuận tiện hơn ạ?"`;
+    const defaultExistingScript = `1. Chào hỏi & Hỏi thăm tình trạng xe:\n"Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] gọi từ Garage nơi Anh/Chị từng bảo dưỡng xe ạ. Thời gian vừa qua xe mình vận hành có êm ái và ổn định không Anh/Chị?"\n\n2. Thông báo ưu đãi tri ân Khách hàng cũ:\n"Nhân dịp bên em triển khai chương trình '${title}' (${code}), em liên hệ để gửi tặng Anh/Chị suất ưu đãi tri ân dành cho khách hàng thân thiết. Khi mang xe ghé xưởng đợt này, ngoài mức chiết khấu trực tiếp của chương trình, Anh/Chị còn được miễn phí kiểm tra hệ thống phanh, gầm, ắc-quy và châm nước rửa kính miễn phí ạ."\n\n3. Chốt lịch hẹn cùng Kỹ thuật viên:\n"Theo lịch sử bảo dưỡng thì xe mình cũng sắp tới mốc kiểm tra định kỳ rồi ạ. Em hỗ trợ đặt lịch trước với Cố vấn dịch vụ quen thuộc cho xe mình vào tuần này luôn Anh/Chị nhé?"`;
+
+    return {
+      code,
+      name: title,
+      goal: matchedDiscount?.telesalesGoal || defaultGoal,
+      keywords: matchedDiscount?.telesalesKeywords || defaultKeywords,
+      newCustomerScript:
+        matchedDiscount?.telesalesNewCustomerScript || defaultNewScript,
+      existingCustomerScript:
+        matchedDiscount?.telesalesExistingCustomerScript ||
+        defaultExistingScript,
+    };
+  };
   const [internalBookings, setInternalBookings] = useState<
     CustomerBookingRecord[]
   >(INITIAL_CUSTOMER_BOOKINGS);
@@ -396,6 +586,8 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
     brandModel: string;
     booking: CustomerBookingRecord;
   } | null>(null);
+  const [viewingPhoneBooking, setViewingPhoneBooking] =
+    useState<CustomerBookingRecord | null>(null);
   const [onlyCompletedRO, setOnlyCompletedRO] = useState(false);
   const [copiedCarModelKey, setCopiedCarModelKey] = useState<string | null>(
     null
@@ -661,75 +853,26 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
   >(null);
   const [editBookingTaskContent, setEditBookingTaskContent] = useState('');
 
-  const [bookingInternalNotes, setBookingInternalNotes] = useState<
-    Record<
-      string,
-      Array<{ id: string; content: string; timestamp: string; author: string }>
-    >
-  >({
-    'cb-1': [
-      {
-        id: 'bn-1',
-        content:
-          'Khách ưu tiên kiểm tra phanh và thay nhớt tổng hợp, cần chuẩn bị sẵn phụ tùng Mazda CX-5.',
-        timestamp: '27/10/2026 08:05',
-        author: 'quych@pbsofu.vn',
-      },
-    ],
-    'cb-2': [
-      {
-        id: 'bn-2',
-        content: 'Đã gọi xác nhận lịch hẹn, khách báo sẽ đến đúng khung giờ 09:30.',
-        timestamp: '27/10/2026 08:30',
-        author: 'quych@pbsofu.vn',
-      },
-    ],
-  });
+  const [internalBookingInternalNotes, setInternalBookingInternalNotes] =
+    useState<Record<string, BookingNoteItem[]>>(INITIAL_BOOKING_INTERNAL_NOTES);
+  const bookingInternalNotes =
+    externalBookingInternalNotes ?? internalBookingInternalNotes;
+  const setBookingInternalNotes =
+    externalSetBookingInternalNotes ?? setInternalBookingInternalNotes;
 
-  const [bookingTasks, setBookingTasks] = useState<
-    Record<
-      string,
-      Array<{
-        id: string;
-        content: string;
-        timestamp: string;
-        author: string;
-        completed: boolean;
-      }>
-    >
-  >({
-    'cb-1': [
-      {
-        id: 'bt-1',
-        content: 'Gọi nhắc khách trước giờ hẹn 1 tiếng và chuẩn bị khoang dịch vụ',
-        timestamp: '27/10/2026 08:10',
-        author: 'quych@pbsofu.vn',
-        completed: false,
-      },
-    ],
-    'cb-2': [
-      {
-        id: 'bt-2',
-        content: 'Kiểm tra tồn kho má phanh trước Honda CR-V trước khi xe tới',
-        timestamp: '27/10/2026 08:40',
-        author: 'quych@pbsofu.vn',
-        completed: true,
-      },
-    ],
-  });
+  const [internalBookingTasks, setInternalBookingTasks] = useState<
+    Record<string, BookingTaskItem[]>
+  >(INITIAL_BOOKING_TASKS);
+  const bookingTasks = externalBookingTasks ?? internalBookingTasks;
+  const setBookingTasks = externalSetBookingTasks ?? setInternalBookingTasks;
 
-  const [bookingActivities, setBookingActivities] = useState<
-    Record<
-      string,
-      Array<{
-        id: string;
-        action: string;
-        detail: string;
-        actor: string;
-        timestamp: string;
-      }>
-    >
+  const [internalBookingActivities, setInternalBookingActivities] = useState<
+    Record<string, BookingActivityItem[]>
   >({});
+  const bookingActivities =
+    externalBookingActivities ?? internalBookingActivities;
+  const setBookingActivities =
+    externalSetBookingActivities ?? setInternalBookingActivities;
 
   const getNowTimestamp = () => {
     const now = new Date();
@@ -741,29 +884,71 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
     )}:${String(now.getMinutes()).padStart(2, '0')}`;
   };
 
+  const getLinkedBookingIdsAndGuestId = (bookingId: string) => {
+    const targetBooking = bookings.find((b) => b.id === bookingId);
+    const guestId = targetBooking?.potentialCustomerId;
+    const targetIds = guestId
+      ? Array.from(
+          new Set([
+            bookingId,
+            ...bookings
+              .filter((b) => b.potentialCustomerId === guestId)
+              .map((b) => b.id),
+          ])
+        )
+      : [bookingId];
+    return { guestId, targetIds };
+  };
+
   const addBookingActivity = (
     bookingId: string,
     action: string,
     detail: string,
-    actor = 'quych@pbsofu.vn'
+    actor = 'quych@pbsofu.vn',
+    activityType: 'note' | 'task' | 'email' = 'note'
   ) => {
-    setBookingActivities((prev) => ({
-      ...prev,
-      [bookingId]: [
-        {
-          id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          action,
-          detail,
-          actor,
-          timestamp: getNowTimestamp(),
-        },
-        ...(prev[bookingId] || []),
-      ],
-    }));
+    const timestamp = getNowTimestamp();
+    const actId = `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newBookingAct: BookingActivityItem = {
+      id: actId,
+      action,
+      detail,
+      actor,
+      timestamp,
+    };
+    const { guestId, targetIds } = getLinkedBookingIdsAndGuestId(bookingId);
+
+    setBookingActivities((prev) => {
+      const next = { ...prev };
+      targetIds.forEach((id) => {
+        next[id] = [newBookingAct, ...(prev[id] || [])];
+      });
+      return next;
+    });
+
+    if (guestId && setGuestActivityHistory) {
+      setGuestActivityHistory((prev) => ({
+        ...prev,
+        [guestId]: [
+          {
+            id: actId,
+            type: activityType,
+            action,
+            content: detail,
+            timestamp,
+            author: actor,
+          },
+          ...(prev[guestId] || []),
+        ],
+      }));
+    }
   };
 
   const getActivitiesForBooking = (booking: CustomerBookingRecord) => {
     const customList = bookingActivities[booking.id] || [];
+    if (booking.potentialCustomerId) {
+      return customList;
+    }
     const defaultList = [
       {
         id: `init-confirm-${booking.id}`,
@@ -789,20 +974,35 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
   const handleSaveBookingNote = (bookingId: string) => {
     if (!bookingNoteContent.trim()) return;
     const noteText = bookingNoteContent.trim();
-    const newNote = {
+    const newNote: BookingNoteItem = {
       id: `bn-${Date.now()}`,
       content: noteText,
       timestamp: getNowTimestamp(),
       author: 'quych@pbsofu.vn',
     };
-    setBookingInternalNotes((prev) => ({
-      ...prev,
-      [bookingId]: [newNote, ...(prev[bookingId] || [])],
-    }));
+    const { guestId, targetIds } = getLinkedBookingIdsAndGuestId(bookingId);
+
+    setBookingInternalNotes((prev) => {
+      const next = { ...prev };
+      targetIds.forEach((id) => {
+        next[id] = [newNote, ...(prev[id] || [])];
+      });
+      return next;
+    });
+
+    if (guestId && setGuestHistory) {
+      setGuestHistory((prev) => ({
+        ...prev,
+        [guestId]: [newNote, ...(prev[guestId] || [])],
+      }));
+    }
+
     addBookingActivity(
       bookingId,
       'Ghi chú nội bộ - Thêm ghi chú',
-      `Đã lưu ghi chú nội bộ: "${noteText}"`
+      noteText,
+      'quych@pbsofu.vn',
+      'note'
     );
     setBookingNoteContent('');
   };
@@ -810,21 +1010,36 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
   const handleAddBookingTask = (bookingId: string) => {
     if (!bookingTaskContent.trim()) return;
     const taskText = bookingTaskContent.trim();
-    const newTask = {
+    const newTask: BookingTaskItem = {
       id: `bt-${Date.now()}`,
       content: taskText,
       timestamp: getNowTimestamp(),
       author: 'quych@pbsofu.vn',
       completed: false,
     };
-    setBookingTasks((prev) => ({
-      ...prev,
-      [bookingId]: [newTask, ...(prev[bookingId] || [])],
-    }));
+    const { guestId, targetIds } = getLinkedBookingIdsAndGuestId(bookingId);
+
+    setBookingTasks((prev) => {
+      const next = { ...prev };
+      targetIds.forEach((id) => {
+        next[id] = [newTask, ...(prev[id] || [])];
+      });
+      return next;
+    });
+
+    if (guestId && setGuestTasks) {
+      setGuestTasks((prev) => ({
+        ...prev,
+        [guestId]: [newTask, ...(prev[guestId] || [])],
+      }));
+    }
+
     addBookingActivity(
       bookingId,
-      'Lời nhắc & Công việc - Thêm mới',
-      `Đã thêm công việc mới: "${taskText}"`
+      'Lời nhắc & Công việc - Thêm lời nhắc',
+      taskText,
+      'quych@pbsofu.vn',
+      'task'
     );
     setBookingTaskContent('');
   };
@@ -834,21 +1049,36 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
       (t) => t.id === taskId
     );
     const nextCompleted = currentTask ? !currentTask.completed : true;
-    setBookingTasks((prev) => ({
-      ...prev,
-      [bookingId]: (prev[bookingId] || []).map((t) =>
-        t.id === taskId ? { ...t, completed: !t.completed } : t
-      ),
-    }));
+    const { guestId, targetIds } = getLinkedBookingIdsAndGuestId(bookingId);
+
+    setBookingTasks((prev) => {
+      const next = { ...prev };
+      targetIds.forEach((id) => {
+        next[id] = (prev[id] || []).map((t) =>
+          t.id === taskId ? { ...t, completed: !t.completed } : t
+        );
+      });
+      return next;
+    });
+
+    if (guestId && setGuestTasks) {
+      setGuestTasks((prev) => ({
+        ...prev,
+        [guestId]: (prev[guestId] || []).map((t) =>
+          t.id === taskId ? { ...t, completed: !t.completed } : t
+        ),
+      }));
+    }
+
     if (currentTask) {
       addBookingActivity(
         bookingId,
         nextCompleted
-          ? 'Lời nhắc & Công việc - Hoàn thành'
-          : 'Lời nhắc & Công việc - Mở lại',
-        `${
-          nextCompleted ? 'Đã đánh dấu hoàn thành' : 'Đã mở lại'
-        } công việc: "${currentTask.content}"`
+          ? 'Lời nhắc & Công việc - Hoàn thành lời nhắc'
+          : 'Lời nhắc & Công việc - Bỏ hoàn thành lời nhắc',
+        currentTask.content,
+        'quych@pbsofu.vn',
+        'task'
       );
     }
   };
@@ -867,18 +1097,35 @@ export const CustomerBookingsModule: React.FC<CustomerBookingsModuleProps> = ({
     const oldTask = (bookingTasks[bookingId] || []).find(
       (t) => t.id === taskId
     );
-    setBookingTasks((prev) => ({
-      ...prev,
-      [bookingId]: (prev[bookingId] || []).map((t) =>
-        t.id === taskId ? { ...t, content: updatedText } : t
-      ),
-    }));
+    const { guestId, targetIds } = getLinkedBookingIdsAndGuestId(bookingId);
+
+    setBookingTasks((prev) => {
+      const next = { ...prev };
+      targetIds.forEach((id) => {
+        next[id] = (prev[id] || []).map((t) =>
+          t.id === taskId ? { ...t, content: updatedText } : t
+        );
+      });
+      return next;
+    });
+
+    if (guestId && setGuestTasks) {
+      setGuestTasks((prev) => ({
+        ...prev,
+        [guestId]: (prev[guestId] || []).map((t) =>
+          t.id === taskId ? { ...t, content: updatedText } : t
+        ),
+      }));
+    }
+
     addBookingActivity(
       bookingId,
-      'Lời nhắc & Công việc - Chỉnh sửa',
+      'Lời nhắc & Công việc - Cập nhật lời nhắc',
       oldTask && oldTask.content !== updatedText
-        ? `Đã cập nhật nội dung công việc từ "${oldTask.content}" thành "${updatedText}"`
-        : `Đã cập nhật nội dung công việc: "${updatedText}"`
+        ? `Từ: "${oldTask.content}"\nThành: "${updatedText}"`
+        : updatedText,
+      'quych@pbsofu.vn',
+      'task'
     );
     setEditingBookingTaskId(null);
     setEditBookingTaskContent('');
@@ -2216,7 +2463,14 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
 
                     {/* Số điện thoại */}
                     <td className="py-4 px-4 align-top whitespace-nowrap text-gray-800">
-                      {booking.phone}
+                      <button
+                        type="button"
+                        onClick={() => setViewingPhoneBooking(booking)}
+                        className="text-[#1A73E8] hover:underline font-medium cursor-pointer text-left"
+                        title="Nhấn vào để xem thông tin theo số điện thoại"
+                      >
+                        {booking.phone}
+                      </button>
                     </td>
 
                     {/* Thời gian hẹn */}
@@ -2467,6 +2721,166 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
           </div>
         </div>
       </div>
+
+      {/* View Phone Info Right-Half Screen Drawer (khi nhấn vào Số điện thoại) */}
+      {viewingPhoneBooking && (
+        <div
+          className="fixed inset-0 bg-black/35 z-60 flex justify-end"
+          onClick={() => setViewingPhoneBooking(null)}
+        >
+          <div
+            className="bg-white w-[76vw] max-w-[1200px] min-w-[860px] h-screen shadow-2xl border-l border-gray-200 flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 pt-3 pb-2 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingPhoneBooking(null)}
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                title="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-4 pb-6 flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="border border-[#D5E1EF] rounded-t-md overflow-hidden">
+                <table className="w-full table-fixed text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#EEF4FB] text-gray-800 border-b border-[#D5E1EF]">
+                      <th
+                        rowSpan={2}
+                        className="w-[6%] py-2.5 px-2.5 text-left font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle"
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span>STT</span>
+                          <span className="text-[#D97706] text-[10px]">📌</span>
+                        </div>
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="w-[13%] py-2.5 px-2.5 text-left font-medium border-r-2 border-[#94A3B8] whitespace-nowrap align-middle"
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span>Biển số</span>
+                          <span className="text-[#D97706] text-[10px]">📌</span>
+                        </div>
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="w-[10%] py-2.5 px-2.5 text-left font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle"
+                      >
+                        Hiệu xe
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="w-[11%] py-2.5 px-2.5 text-left font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle"
+                      >
+                        Loại xe
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="w-[9%] py-2.5 px-2.5 text-center font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle"
+                      >
+                        Tất cả RO
+                      </th>
+                      <th
+                        colSpan={2}
+                        className="w-[20%] py-2 px-2.5 text-center font-medium border-r border-b border-[#D5E1EF] whitespace-nowrap align-middle"
+                      >
+                        RO hoàn thành
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="w-[13%] py-2.5 px-2.5 text-center font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle"
+                      >
+                        Lần cuối ghé
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="w-[9%] py-2.5 px-2.5 text-right font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle"
+                      >
+                        Công nợ
+                      </th>
+                      <th
+                        rowSpan={2}
+                        className="w-[9%] py-2.5 px-2.5 text-right font-medium whitespace-nowrap align-middle"
+                      >
+                        Hạng mục chờ
+                      </th>
+                    </tr>
+                    <tr className="bg-[#EEF4FB] text-gray-800 border-b border-[#D5E1EF]">
+                      <th className="w-[9%] py-2 px-2.5 text-center font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle">
+                        Tổng RO
+                      </th>
+                      <th className="w-[11%] py-2 px-2.5 text-center font-medium border-r border-[#D5E1EF] whitespace-nowrap align-middle">
+                        Tổng chi tiêu
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* TỔNG CỘNG Row */}
+                    <tr className="bg-[#F4F8FC] border-b border-[#D5E1EF]">
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF]"></td>
+                      <td className="py-2.5 px-2.5 border-r-2 border-[#94A3B8] text-[#1A73E8] font-medium whitespace-nowrap">
+                        TỔNG CỘNG
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF]"></td>
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF]"></td>
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF] text-center text-[#1A73E8] font-medium whitespace-nowrap">
+                        1
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF] text-center text-[#1A73E8] font-medium whitespace-nowrap">
+                        1
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF] text-center text-[#1A73E8] font-medium whitespace-nowrap">
+                        370,909
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF]"></td>
+                      <td className="py-2.5 px-2.5 border-r border-[#D5E1EF] text-right text-[#1A73E8] font-medium whitespace-nowrap">
+                        370,909
+                      </td>
+                      <td className="py-2.5 px-2.5 text-right text-[#1A73E8] font-medium whitespace-nowrap">
+                        0
+                      </td>
+                    </tr>
+
+                    {/* Data Row */}
+                    <tr className="border-b border-[#E5ECF4] hover:bg-gray-50/60">
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-center text-gray-900">
+                        1
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r-2 border-[#94A3B8] text-[#1A73E8] whitespace-nowrap">
+                        50G09876
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-gray-900"></td>
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-gray-900"></td>
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-center text-gray-900 whitespace-nowrap">
+                        1
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-center text-gray-900 whitespace-nowrap">
+                        1
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-center text-gray-900 whitespace-nowrap">
+                        370,909
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-center text-gray-900 whitespace-nowrap">
+                        25/09/2026 16:40
+                      </td>
+                      <td className="py-2.5 px-2.5 border-r border-[#E5ECF4] text-right text-gray-900 whitespace-nowrap">
+                        370,909
+                      </td>
+                      <td className="py-2.5 px-2.5 text-right text-gray-900 whitespace-nowrap">
+                        0
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Plate Info Right-Half Screen Drawer (khi nhấn vào Biển số xe - Hiệu xe - Dòng xe) */}
       {viewingPlateInfo &&
@@ -5789,6 +6203,15 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                     <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
                       <button
                         type="button"
+                        onClick={() => setCallScriptBookingRecord(currentBooking)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Xem kịch bản gọi</span>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => {
                           setSelectedZaloRecord(currentBooking);
                           setZaloContent(getZaloDefaultContent(currentBooking));
@@ -6413,6 +6836,132 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          );
+        })()}
+
+      {/* Full-Screen Call Script Pop-up (Xem kịch bản gọi) */}
+      {callScriptBookingRecord &&
+        (() => {
+          const scriptInfo = getBookingCampaignTelesalesDetails(
+            callScriptBookingRecord
+          );
+          return (
+            <div className="fixed inset-0 bg-white z-70 flex flex-col w-screen h-screen overflow-hidden">
+              {/* Top Bar */}
+              <div className="px-6 py-4 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-[#1A73E8] text-white flex items-center justify-center shadow-xs shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base font-bold text-gray-900">
+                        Chi tiết kịch bản gọi — Mã chiến dịch:
+                      </h2>
+                      <span className="px-2.5 py-0.5 bg-blue-100 text-[#1A73E8] border border-blue-200 rounded-md text-xs font-bold font-mono">
+                        {scriptInfo.code}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Chương trình:{' '}
+                      <span className="font-semibold text-gray-800">
+                        {scriptInfo.name}
+                      </span>{' '}
+                      (Module Quản lý chiết khấu) • Khách hàng:{' '}
+                      <span className="font-semibold text-gray-800">
+                        {callScriptBookingRecord.customerName}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCallScriptBookingRecord(null)}
+                  className="p-2 text-gray-500 hover:text-gray-800 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                  title="Đóng"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 p-6 overflow-y-auto space-y-5 bg-gray-50/40">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Field 1: Mục tiêu chương trình */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-blue-100 text-[#1A73E8] rounded text-xs font-bold">
+                        1
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Mục tiêu chương trình
+                      </h4>
+                    </div>
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      {scriptInfo.goal}
+                    </div>
+                  </div>
+
+                  {/* Field 2: Từ khóa & Thông điệp trọng tâm */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">
+                        2
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Từ khóa &amp; Thông điệp trọng tâm
+                      </h4>
+                    </div>
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      {scriptInfo.keywords}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Field 3: Kịch bản gọi chi tiết (Khách hàng mới) */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
+                        3
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Kịch bản gọi chi tiết (Khách hàng mới)
+                      </h4>
+                    </div>
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      {scriptInfo.newCustomerScript}
+                    </div>
+                  </div>
+
+                  {/* Field 4: Kịch bản gọi chi tiết (Khách hàng cũ) */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-bold">
+                        4
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Kịch bản gọi chi tiết (Khách hàng cũ)
+                      </h4>
+                    </div>
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      {scriptInfo.existingCustomerScript}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-3.5 bg-white border-t border-gray-200 flex items-center justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCallScriptBookingRecord(null)}
+                  className="px-5 py-2 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
               </div>
             </div>
           );

@@ -15,15 +15,33 @@ import { SupplierHomepage } from './components/SupplierHomepage';
 import { CommercialSales } from './components/CommercialSales';
 import { PurchaseOrders } from './components/PurchaseOrders';
 import { RepairService } from './components/RepairService';
-import { EventsModule } from './components/EventsModule';
-import { PotentialCustomersModule } from './components/PotentialCustomersModule';
+import {
+  EventsModule,
+  HistoryItem,
+  TaskItem,
+  ActivityItem,
+} from './components/EventsModule';
+import {
+  PotentialCustomersModule,
+  PotentialCustomerItem,
+  MOCK_POTENTIAL_CUSTOMERS,
+} from './components/PotentialCustomersModule';
 import { CustomersModule } from './components/CustomersModule';
 import {
   CustomerBookingsModule,
   CustomerBookingRecord,
   INITIAL_CUSTOMER_BOOKINGS,
+  BookingNoteItem,
+  BookingTaskItem,
+  BookingActivityItem,
+  INITIAL_BOOKING_INTERNAL_NOTES,
+  INITIAL_BOOKING_TASKS,
 } from './components/CustomerBookingsModule';
-import { DiscountManagementModule } from './components/DiscountManagementModule';
+import {
+  DiscountManagementModule,
+  INITIAL_DISCOUNTS,
+  DiscountRecord,
+} from './components/DiscountManagementModule';
 import { RegistrationApprovalModule } from './components/RegistrationApprovalModule';
 import { OrderProvider } from './context/OrderContext';
 
@@ -31,19 +49,39 @@ const App: React.FC = () => {
   const [productType, setProductType] = useState<ProductType>(ProductType.SPARE_PART);
   const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'customer_bookings' | 'customers' | 'discount_management' | 'registration_approval'>('categories');
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
+  const [potentialCustomers, setPotentialCustomers] = useState<
+    PotentialCustomerItem[]
+  >(MOCK_POTENTIAL_CUSTOMERS);
+  const [guestHistory, setGuestHistory] = useState<Record<string, HistoryItem[]>>({});
+  const [guestTasks, setGuestTasks] = useState<Record<string, TaskItem[]>>({});
+  const [guestActivityHistory, setGuestActivityHistory] = useState<
+    Record<string, ActivityItem[]>
+  >({});
   const [customerBookings, setCustomerBookings] = useState<CustomerBookingRecord[]>(
     INITIAL_CUSTOMER_BOOKINGS
   );
+  const [bookingInternalNotes, setBookingInternalNotes] = useState<
+    Record<string, BookingNoteItem[]>
+  >(INITIAL_BOOKING_INTERNAL_NOTES);
+  const [bookingTasks, setBookingTasks] = useState<
+    Record<string, BookingTaskItem[]>
+  >(INITIAL_BOOKING_TASKS);
+  const [bookingActivities, setBookingActivities] = useState<
+    Record<string, BookingActivityItem[]>
+  >({});
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
+  const [discounts, setDiscounts] = useState<DiscountRecord[]>(INITIAL_DISCOUNTS);
 
   const handleCreateCustomerBooking = (
-    bookingData: Omit<CustomerBookingRecord, 'id' | 'bookingCode'>
+    bookingData: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> & {
+      id?: string;
+    }
   ) => {
     setCustomerBookings((prev) => {
       const nextNum = String(prev.length + 1).padStart(2, '0');
       const newRecord: CustomerBookingRecord = {
         ...bookingData,
-        id: `cb-${Date.now()}`,
+        id: bookingData.id || `cb-${Date.now()}`,
         bookingCode: `LH-241027-${nextNum}`,
       };
       return [newRecord, ...prev];
@@ -84,16 +122,47 @@ const App: React.FC = () => {
             setBookingCounts={setBookingCounts}
             customerBookings={customerBookings}
             setCustomerBookings={setCustomerBookings}
+            discounts={discounts}
+            events={potentialCustomers}
+            setEvents={setPotentialCustomers}
+            guestHistory={guestHistory}
+            setGuestHistory={setGuestHistory}
+            guestTasks={guestTasks}
+            setGuestTasks={setGuestTasks}
+            guestActivityHistory={guestActivityHistory}
+            setGuestActivityHistory={setGuestActivityHistory}
+            bookingInternalNotes={bookingInternalNotes}
+            setBookingInternalNotes={setBookingInternalNotes}
+            bookingTasks={bookingTasks}
+            setBookingTasks={setBookingTasks}
+            bookingActivities={bookingActivities}
+            setBookingActivities={setBookingActivities}
           />
         ) : currentView === 'customer_bookings' ? (
           <CustomerBookingsModule
             bookings={customerBookings}
             setBookings={setCustomerBookings}
+            discounts={discounts}
+            bookingInternalNotes={bookingInternalNotes}
+            setBookingInternalNotes={setBookingInternalNotes}
+            bookingTasks={bookingTasks}
+            setBookingTasks={setBookingTasks}
+            bookingActivities={bookingActivities}
+            setBookingActivities={setBookingActivities}
+            guestHistory={guestHistory}
+            setGuestHistory={setGuestHistory}
+            guestTasks={guestTasks}
+            setGuestTasks={setGuestTasks}
+            guestActivityHistory={guestActivityHistory}
+            setGuestActivityHistory={setGuestActivityHistory}
           />
         ) : currentView === 'customers' ? (
           <CustomersModule />
         ) : currentView === 'discount_management' ? (
-          <DiscountManagementModule />
+          <DiscountManagementModule
+            discounts={discounts}
+            setDiscounts={setDiscounts}
+          />
         ) : currentView === 'registration_approval' ? (
           <RegistrationApprovalModule />
         ) : (

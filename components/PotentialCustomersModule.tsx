@@ -1,11 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Filter, X, FileSearch, Inbox, Calendar, CalendarPlus, HelpCircle, ChevronDown, Settings, Download, Mail, User, Paperclip, MessageSquarePlus, Phone, Building2, Wrench, MessageCircle, Hourglass, ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle, Globe, MapPin } from 'lucide-react';
+import { Plus, Trash2, Filter, X, FileSearch, Inbox, Calendar, CalendarPlus, HelpCircle, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Download, Mail, User, Paperclip, MessageSquarePlus, Phone, Building2, Wrench, MessageCircle, Hourglass, ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle, Globe, MapPin, BookOpen } from 'lucide-react';
 import { EventSettings } from './EventSettings';
 import { HistoryItem, TaskItem, ActivityItem } from './EventsModule';
 import {
   CustomerBookingsModule,
   CustomerBookingRecord,
   INITIAL_CUSTOMER_BOOKINGS,
+  BookingNoteItem,
+  BookingTaskItem,
+  BookingActivityItem,
+  INITIAL_BOOKING_INTERNAL_NOTES,
+  INITIAL_BOOKING_TASKS,
 } from './CustomerBookingsModule';
 
 export type PotentialCustomerStatus = 'Chờ xác nhận' | 'Đã xác nhận' | 'Xe đã đến' | 'Bỏ hẹn' | 'Đã hủy' | 'Chờ xóa';
@@ -308,9 +313,13 @@ export interface PotentialCustomerItem {
   roles?: string[];
   otherRole?: string;
   notes?: string;
+  campaignGoal?: string;
+  campaignKeywords?: string;
+  newCustomerScript?: string;
+  existingCustomerScript?: string;
 }
 
-const MOCK_POTENTIAL_CUSTOMERS: PotentialCustomerItem[] = [
+export const MOCK_POTENTIAL_CUSTOMERS: PotentialCustomerItem[] = [
   {
     id: 'pc-1',
     code: 'KHTN-2024-001',
@@ -558,13 +567,40 @@ const MOCK_POTENTIAL_CUSTOMERS: PotentialCustomerItem[] = [
 
 interface PotentialCustomersModuleProps {
   onCreateCustomerBooking?: (
-    booking: Omit<CustomerBookingRecord, 'id' | 'bookingCode'>
+    booking: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> & { id?: string }
   ) => void;
   bookingCounts?: Record<string, number>;
   setBookingCounts?: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   customerBookings?: CustomerBookingRecord[];
   setCustomerBookings?: React.Dispatch<
     React.SetStateAction<CustomerBookingRecord[]>
+  >;
+  discounts?: any[];
+  events?: PotentialCustomerItem[];
+  setEvents?: React.Dispatch<React.SetStateAction<PotentialCustomerItem[]>>;
+  guestHistory?: Record<string, HistoryItem[]>;
+  setGuestHistory?: React.Dispatch<
+    React.SetStateAction<Record<string, HistoryItem[]>>
+  >;
+  guestTasks?: Record<string, TaskItem[]>;
+  setGuestTasks?: React.Dispatch<
+    React.SetStateAction<Record<string, TaskItem[]>>
+  >;
+  guestActivityHistory?: Record<string, ActivityItem[]>;
+  setGuestActivityHistory?: React.Dispatch<
+    React.SetStateAction<Record<string, ActivityItem[]>>
+  >;
+  bookingInternalNotes?: Record<string, BookingNoteItem[]>;
+  setBookingInternalNotes?: React.Dispatch<
+    React.SetStateAction<Record<string, BookingNoteItem[]>>
+  >;
+  bookingTasks?: Record<string, BookingTaskItem[]>;
+  setBookingTasks?: React.Dispatch<
+    React.SetStateAction<Record<string, BookingTaskItem[]>>
+  >;
+  bookingActivities?: Record<string, BookingActivityItem[]>;
+  setBookingActivities?: React.Dispatch<
+    React.SetStateAction<Record<string, BookingActivityItem[]>>
   >;
 }
 
@@ -574,8 +610,58 @@ export const PotentialCustomersModule: React.FC<PotentialCustomersModuleProps> =
   setBookingCounts: externalSetBookingCounts,
   customerBookings: externalCustomerBookings,
   setCustomerBookings: externalSetCustomerBookings,
+  discounts = [],
+  events: externalEvents,
+  setEvents: externalSetEvents,
+  guestHistory: externalGuestHistory,
+  setGuestHistory: externalSetGuestHistory,
+  guestTasks: externalGuestTasks,
+  setGuestTasks: externalSetGuestTasks,
+  guestActivityHistory: externalGuestActivityHistory,
+  setGuestActivityHistory: externalSetGuestActivityHistory,
+  bookingInternalNotes: externalBookingInternalNotes,
+  setBookingInternalNotes: externalSetBookingInternalNotes,
+  bookingTasks: externalBookingTasks,
+  setBookingTasks: externalSetBookingTasks,
+  bookingActivities: externalBookingActivities,
+  setBookingActivities: externalSetBookingActivities,
 }) => {
-  const [events, setEvents] = useState<PotentialCustomerItem[]>(MOCK_POTENTIAL_CUSTOMERS);
+  const [internalEvents, setInternalEvents] = useState<PotentialCustomerItem[]>(MOCK_POTENTIAL_CUSTOMERS);
+  const events = externalEvents ?? internalEvents;
+  const setEvents = externalSetEvents ?? setInternalEvents;
+  const [callScriptModalGuest, setCallScriptModalGuest] = useState<PotentialCustomerItem | null>(null);
+  const [showBookingNewScript, setShowBookingNewScript] = useState(false);
+  const [showBookingExistingScript, setShowBookingExistingScript] = useState(false);
+
+  const getCampaignTelesalesDetails = (guest: PotentialCustomerItem) => {
+    const matchedDiscount = discounts.find(
+      (d) =>
+        d.code?.toLowerCase() === guest.code?.toLowerCase() ||
+        (d.discountCode && d.discountCode.toLowerCase() === guest.code?.toLowerCase()) ||
+        d.name?.toLowerCase() === guest.name?.toLowerCase()
+    );
+
+    const title = matchedDiscount?.name || guest.name || 'Chương trình Chăm sóc & Bảo dưỡng Xe';
+    const code = matchedDiscount?.code || guest.code || 'CK-GARAGE';
+
+    const defaultGoal = `• Mục tiêu chuyển đổi: Liên hệ tư vấn 100% danh sách khách hàng thuộc chương trình "${title}" (${code}), đạt tỷ lệ đặt lịch hẹn đến xưởng tối thiểu 35% – 45%.\n• Gia tăng số lượng RO sử dụng mã ưu đãi ${code} cho các hạng mục bảo dưỡng định kỳ, thay dầu nhớt, cân mâm, đảo lốp và kiểm tra an toàn tổng quát.\n• Thu thập đầy đủ thông tin Biển số xe, Dòng xe, Số ODO hiện tại và khung giờ khách dự kiến ghé Garage để bộ phận Cố vấn dịch vụ chuẩn bị tiếp đón.`;
+    const defaultKeywords = `• Từ khóa trọng tâm: "Ưu đãi độc quyền mã ${code}", "Miễn phí kiểm tra an toàn 18 hạng mục", "Giữ khoang dịch vụ ưu tiên – Không chờ đợi", "Phụ tùng chính hãng – Báo giá minh bạch".\n• Thông điệp cốt lõi: Chủ động bảo dưỡng định kỳ kết hợp áp dụng chương trình "${title}" giúp tiết kiệm chi phí tối đa và đảm bảo xe vận hành an toàn tuyệt đối.`;
+    const defaultNewScript = `1. Chào hỏi & Giới thiệu chương trình:\n"Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] gọi từ Bộ phận Chăm sóc Khách hàng Garage. Hiện tại bên em đang triển khai chương trình '${title}' (Mã chiến dịch: ${code}) dành riêng cho khách hàng mới lần đầu trải nghiệm dịch vụ tại xưởng ạ."\n\n2. Khai thác nhu cầu & Tư vấn quyền lợi:\n"Không biết hiện tại xe mình đang sử dụng là dòng xe gì và đã đến kỳ bảo dưỡng hay cần kiểm tra hạng mục nào chưa ạ? Khi đặt lịch trước qua chương trình này, Anh/Chị sẽ được áp dụng ngay ưu đãi chiết khấu trực tiếp trên hóa đơn kèm gói Kiểm tra chẩn đoán an toàn tổng quát 18 hạng mục hoàn toàn miễn phí ạ."\n\n3. Chốt lịch hẹn đến xưởng:\n"Để Anh/Chị không phải chờ đợi khi mang xe tới, em xin phép giữ trước khoang dịch vụ ưu tiên và kích hoạt mã '${code}' theo biển số xe của mình vào Thứ 7 hoặc Chủ nhật tuần này nhé ạ? Anh/Chị ghé khung giờ 08:30 hay 14:00 sẽ thuận tiện hơn ạ?"`;
+    const defaultExistingScript = `1. Chào hỏi & Hỏi thăm tình trạng xe:\n"Dạ em chào Anh/Chị [Tên KH], em là [Tên TVV] gọi từ Garage nơi Anh/Chị từng bảo dưỡng xe ạ. Thời gian vừa qua xe mình vận hành có êm ái và ổn định không Anh/Chị?"\n\n2. Thông báo ưu đãi tri ân Khách hàng cũ:\n"Nhân dịp bên em triển khai chương trình '${title}' (${code}), em liên hệ để gửi tặng Anh/Chị suất ưu đãi tri ân dành cho khách hàng thân thiết. Khi mang xe ghé xưởng đợt này, ngoài mức chiết khấu trực tiếp của chương trình, Anh/Chị còn được miễn phí kiểm tra hệ thống phanh, gầm, ắc-quy và châm nước rửa kính miễn phí ạ."\n\n3. Chốt lịch hẹn cùng Kỹ thuật viên:\n"Theo lịch sử bảo dưỡng thì xe mình cũng sắp tới mốc kiểm tra định kỳ rồi ạ. Em hỗ trợ đặt lịch trước với Cố vấn dịch vụ quen thuộc cho xe mình vào tuần này luôn Anh/Chị nhé?"`;
+
+    return {
+      code,
+      name: title,
+      goal: matchedDiscount?.telesalesGoal || guest.campaignGoal || defaultGoal,
+      keywords: matchedDiscount?.telesalesKeywords || guest.campaignKeywords || defaultKeywords,
+      newCustomerScript:
+        matchedDiscount?.telesalesNewCustomerScript || guest.newCustomerScript || defaultNewScript,
+      existingCustomerScript:
+        matchedDiscount?.telesalesExistingCustomerScript ||
+        guest.existingCustomerScript ||
+        defaultExistingScript,
+    };
+  };
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [filterSearch, setFilterSearch] = useState('');
   const [filterCode, setFilterCode] = useState('');
@@ -650,10 +736,34 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   const [guestProfileModalOpen, setGuestProfileModalOpen] = useState(false);
   const [selectedGuestRecord, setSelectedGuestRecord] = useState<PotentialCustomerItem | null>(null);
   const [activeTab, setActiveTab] = useState<'activity_history' | 'history' | 'tasks'>('activity_history');
-  const [guestHistory, setGuestHistory] = useState<Record<string, HistoryItem[]>>({});
-  const [guestActivityHistory, setGuestActivityHistory] = useState<Record<string, ActivityItem[]>>({});
+  const [internalGuestHistory, setInternalGuestHistory] = useState<Record<string, HistoryItem[]>>({});
+  const guestHistory = externalGuestHistory ?? internalGuestHistory;
+  const setGuestHistory = externalSetGuestHistory ?? setInternalGuestHistory;
+  const [internalGuestActivityHistory, setInternalGuestActivityHistory] = useState<Record<string, ActivityItem[]>>({});
+  const guestActivityHistory = externalGuestActivityHistory ?? internalGuestActivityHistory;
+  const setGuestActivityHistory = externalSetGuestActivityHistory ?? setInternalGuestActivityHistory;
   const [noteContent, setNoteContent] = useState('');
-  const [guestTasks, setGuestTasks] = useState<Record<string, TaskItem[]>>({});
+  const [internalGuestTasks, setInternalGuestTasks] = useState<Record<string, TaskItem[]>>({});
+  const guestTasks = externalGuestTasks ?? internalGuestTasks;
+  const setGuestTasks = externalSetGuestTasks ?? setInternalGuestTasks;
+  const [internalBookingInternalNotes, setInternalBookingInternalNotes] =
+    useState<Record<string, BookingNoteItem[]>>(INITIAL_BOOKING_INTERNAL_NOTES);
+  const bookingInternalNotes =
+    externalBookingInternalNotes ?? internalBookingInternalNotes;
+  const setBookingInternalNotes =
+    externalSetBookingInternalNotes ?? setInternalBookingInternalNotes;
+  const [internalBookingTasks, setInternalBookingTasks] = useState<
+    Record<string, BookingTaskItem[]>
+  >(INITIAL_BOOKING_TASKS);
+  const bookingTasks = externalBookingTasks ?? internalBookingTasks;
+  const setBookingTasks = externalSetBookingTasks ?? setInternalBookingTasks;
+  const [internalBookingActivities, setInternalBookingActivities] = useState<
+    Record<string, BookingActivityItem[]>
+  >({});
+  const bookingActivities =
+    externalBookingActivities ?? internalBookingActivities;
+  const setBookingActivities =
+    externalSetBookingActivities ?? setInternalBookingActivities;
   const [taskContent, setTaskContent] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTaskContent, setEditTaskContent] = useState('');
@@ -746,6 +856,11 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     setOpenSourceDropdownId(null);
   };
   
+  const getLinkedBookingIds = (guestId: string) =>
+    customerBookings
+      .filter((b) => b.potentialCustomerId === guestId)
+      .map((b) => b.id);
+
   const addActivity = (guestId: string, type: 'note' | 'task' | 'email', action: string, content: string) => {
     const newActivity: ActivityItem = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -760,10 +875,29 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
       ...prev,
       [guestId]: [newActivity, ...(prev[guestId] || [])]
     }));
+
+    const linkedIds = getLinkedBookingIds(guestId);
+    if (linkedIds.length > 0) {
+      const bookingAct: BookingActivityItem = {
+        id: newActivity.id,
+        action: newActivity.action,
+        detail: newActivity.content,
+        actor: newActivity.author,
+        timestamp: newActivity.timestamp,
+      };
+      setBookingActivities((prev) => {
+        const next = { ...prev };
+        linkedIds.forEach((bId) => {
+          next[bId] = [bookingAct, ...(prev[bId] || [])];
+        });
+        return next;
+      });
+    }
   };
   
   const handleSaveNote = () => {
-    if (!noteContent.trim() || !selectedGuestRecord) return;
+    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    if (!noteContent.trim() || !targetGuest) return;
     
     const newNote: HistoryItem = {
       id: Date.now().toString(),
@@ -774,16 +908,28 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     
     setGuestHistory(prev => ({
       ...prev,
-      [selectedGuestRecord.id]: [newNote, ...(prev[selectedGuestRecord.id] || [])]
+      [targetGuest.id]: [newNote, ...(prev[targetGuest.id] || [])]
     }));
+
+    const linkedIds = getLinkedBookingIds(targetGuest.id);
+    if (linkedIds.length > 0) {
+      setBookingInternalNotes((prev) => {
+        const next = { ...prev };
+        linkedIds.forEach((bId) => {
+          next[bId] = [newNote, ...(prev[bId] || [])];
+        });
+        return next;
+      });
+    }
     
-    addActivity(selectedGuestRecord.id, 'note', 'Ghi chú nội bộ - Thêm ghi chú', noteContent);
+    addActivity(targetGuest.id, 'note', 'Ghi chú nội bộ - Thêm ghi chú', noteContent);
     
     setNoteContent('');
   };
 
   const handleAddTask = () => {
-    if (!taskContent.trim() || !selectedGuestRecord) return;
+    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    if (!taskContent.trim() || !targetGuest) return;
     
     const newTask: TaskItem = {
       id: Date.now().toString(),
@@ -795,21 +941,33 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     
     setGuestTasks(prev => ({
       ...prev,
-      [selectedGuestRecord.id]: [newTask, ...(prev[selectedGuestRecord.id] || [])]
+      [targetGuest.id]: [newTask, ...(prev[targetGuest.id] || [])]
     }));
+
+    const linkedIds = getLinkedBookingIds(targetGuest.id);
+    if (linkedIds.length > 0) {
+      setBookingTasks((prev) => {
+        const next = { ...prev };
+        linkedIds.forEach((bId) => {
+          next[bId] = [newTask, ...(prev[bId] || [])];
+        });
+        return next;
+      });
+    }
     
-    addActivity(selectedGuestRecord.id, 'task', 'Lời nhắc & Công việc - Thêm lời nhắc', taskContent);
+    addActivity(targetGuest.id, 'task', 'Lời nhắc & Công việc - Thêm lời nhắc', taskContent);
     
     setTaskContent('');
   };
 
   const handleToggleTask = (taskId: string) => {
-    if (!selectedGuestRecord) return;
+    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    if (!targetGuest) return;
     
-    const task = guestTasks[selectedGuestRecord.id]?.find(t => t.id === taskId);
+    const task = guestTasks[targetGuest.id]?.find(t => t.id === taskId);
     if (task) {
       addActivity(
-        selectedGuestRecord.id,
+        targetGuest.id,
         'task',
         task.completed ? 'Lời nhắc & Công việc - Bỏ hoàn thành lời nhắc' : 'Lời nhắc & Công việc - Hoàn thành lời nhắc',
         task.content
@@ -818,10 +976,23 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
 
     setGuestTasks(prev => ({
       ...prev,
-      [selectedGuestRecord.id]: prev[selectedGuestRecord.id].map(task => 
+      [targetGuest.id]: prev[targetGuest.id].map(task => 
         task.id === taskId ? { ...task, completed: !task.completed } : task
       )
     }));
+
+    const linkedIds = getLinkedBookingIds(targetGuest.id);
+    if (linkedIds.length > 0) {
+      setBookingTasks((prev) => {
+        const next = { ...prev };
+        linkedIds.forEach((bId) => {
+          next[bId] = (prev[bId] || []).map((t) =>
+            t.id === taskId ? { ...t, completed: !t.completed } : t
+          );
+        });
+        return next;
+      });
+    }
   };
 
   const handleStartEditTask = (task: TaskItem) => {
@@ -830,19 +1001,33 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   };
 
   const handleSaveEditTask = () => {
-    if (!selectedGuestRecord || !editingTaskId || !editTaskContent.trim()) return;
+    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    if (!targetGuest || !editingTaskId || !editTaskContent.trim()) return;
     
-    const oldTask = guestTasks[selectedGuestRecord.id]?.find(t => t.id === editingTaskId);
+    const oldTask = guestTasks[targetGuest.id]?.find(t => t.id === editingTaskId);
     if (oldTask && oldTask.content !== editTaskContent) {
-      addActivity(selectedGuestRecord.id, 'task', 'Lời nhắc & Công việc - Cập nhật lời nhắc', `Từ: "${oldTask.content}"\nThành: "${editTaskContent}"`);
+      addActivity(targetGuest.id, 'task', 'Lời nhắc & Công việc - Cập nhật lời nhắc', `Từ: "${oldTask.content}"\nThành: "${editTaskContent}"`);
     }
 
     setGuestTasks(prev => ({
       ...prev,
-      [selectedGuestRecord.id]: prev[selectedGuestRecord.id].map(task => 
+      [targetGuest.id]: prev[targetGuest.id].map(task => 
         task.id === editingTaskId ? { ...task, content: editTaskContent } : task
       )
     }));
+
+    const linkedIds = getLinkedBookingIds(targetGuest.id);
+    if (linkedIds.length > 0) {
+      setBookingTasks((prev) => {
+        const next = { ...prev };
+        linkedIds.forEach((bId) => {
+          next[bId] = (prev[bId] || []).map((t) =>
+            t.id === editingTaskId ? { ...t, content: editTaskContent } : t
+          );
+        });
+        return next;
+      });
+    }
     
     setEditingTaskId(null);
     setEditTaskContent('');
@@ -955,6 +1140,8 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
 
   const handleExecuteCreateCustomerBooking = () => {
     if (!bookingModalRecord) return;
+    const guestId = bookingModalRecord.id;
+    const newBookingId = `cb-${Date.now()}`;
 
     const finalLicensePlates = Array.from(
       new Set([
@@ -971,19 +1158,80 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     const licensePlateStr = finalLicensePlates.join(', ');
     const carModelStr = finalCarModels.join(', ');
 
-    addActivity(
-      bookingModalRecord.id,
-      'task',
-      'Tạo Lịch hẹn Khách đặt',
-      `Đã tạo lịch hẹn cho khách hàng ${bookingModalRecord.fullName} (${bookingPhone})\nThời gian hẹn: ${bookingTimeSlot} - ${bookingDate}\nYêu cầu dịch vụ: ${bookingServiceRequest || 'Chưa nhập'}\nDịch vụ góp ý: ${bookingSuggestedTags.join(', ') || 'Chưa chọn'}\nBiển số xe: ${licensePlateStr || 'Chưa nhập'} | Dòng xe: ${carModelStr || 'Chưa nhập'}`
-    );
+    const createBookingActivity: ActivityItem = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      type: 'task',
+      action: 'Tạo Lịch hẹn Khách đặt',
+      content: `Đã tạo lịch hẹn cho khách hàng ${bookingModalRecord.fullName} (${bookingPhone})\nThời gian hẹn: ${bookingTimeSlot} - ${bookingDate}\nYêu cầu dịch vụ: ${bookingServiceRequest || 'Chưa nhập'}\nDịch vụ góp ý: ${bookingSuggestedTags.join(', ') || 'Chưa chọn'}\nBiển số xe: ${licensePlateStr || 'Chưa nhập'} | Dòng xe: ${carModelStr || 'Chưa nhập'}`,
+      timestamp: new Date().toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }),
+      author: 'quych@pbsofu.vn',
+    };
 
-    setBookingCounts(prev => ({
+    const currentActivities = [
+      createBookingActivity,
+      ...(guestActivityHistory[guestId] || []),
+    ];
+    const currentNotes = [...(guestHistory[guestId] || [])];
+    const currentTasks = [...(guestTasks[guestId] || [])];
+
+    setGuestActivityHistory((prev) => ({
       ...prev,
-      [bookingModalRecord.id]: (prev[bookingModalRecord.id] || 0) + 1
+      [guestId]: [createBookingActivity, ...(prev[guestId] || [])],
     }));
 
-    const newBookingPayload: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> = {
+    const allTargetBookingIds = [
+      newBookingId,
+      ...getLinkedBookingIds(guestId),
+    ];
+
+    const mappedBookingActivities: BookingActivityItem[] =
+      currentActivities.map((act) => ({
+        id: act.id,
+        action: act.action,
+        detail: act.content,
+        actor: act.author,
+        timestamp: act.timestamp,
+      }));
+
+    setBookingActivities((prev) => {
+      const next = { ...prev };
+      allTargetBookingIds.forEach((bId) => {
+        next[bId] = mappedBookingActivities.map((a) => ({ ...a }));
+      });
+      return next;
+    });
+
+    setBookingInternalNotes((prev) => {
+      const next = { ...prev };
+      allTargetBookingIds.forEach((bId) => {
+        next[bId] = currentNotes.map((n) => ({ ...n }));
+      });
+      return next;
+    });
+
+    setBookingTasks((prev) => {
+      const next = { ...prev };
+      allTargetBookingIds.forEach((bId) => {
+        next[bId] = currentTasks.map((t) => ({ ...t }));
+      });
+      return next;
+    });
+
+    setBookingCounts((prev) => ({
+      ...prev,
+      [guestId]: (prev[guestId] || 0) + 1,
+    }));
+
+    const newBookingPayload: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> & {
+      id?: string;
+    } = {
+      id: newBookingId,
       licensePlate: licensePlateStr || 'Chưa cập nhật',
       carModel: carModelStr || 'Chưa cập nhật',
       customerName: bookingModalRecord.fullName,
@@ -997,7 +1245,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
       sourceCode: bookingModalRecord.code,
       campaignOrNote: bookingModalRecord.name,
       status: 'Chờ xe tới',
-      potentialCustomerId: bookingModalRecord.id,
+      potentialCustomerId: guestId,
     };
 
     if (onCreateCustomerBooking) {
@@ -1008,7 +1256,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
         return [
           {
             ...newBookingPayload,
-            id: `cb-${Date.now()}`,
+            id: newBookingId,
             bookingCode: `LH-241027-${nextNum}`,
           },
           ...prev,
@@ -1445,7 +1693,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                       </button>
                       <button 
                         className="p-1.5 text-green-600 hover:bg-green-100 rounded-md transition-colors" 
-                        title="Thông tin Khách hàng tiềm năng"
+                        title="Thông tin Khách hàng quan tâm"
                         onClick={() => {
                           setSelectedGuestRecord(row);
                           setActiveTab('activity_history');
@@ -2187,6 +2435,14 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                     <div className="flex items-center gap-2 whitespace-nowrap">
                       <button
                         type="button"
+                        onClick={() => setCallScriptModalGuest(currentGuest)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors border border-emerald-200 cursor-pointer"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Xem kịch bản gọi
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleCreateCustomerBooking(currentGuest)}
                         className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-semibold transition-colors border border-indigo-200"
                       >
@@ -2577,6 +2833,130 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
         );
       })()}
 
+      {/* Call Script Popup Modal (Xem kịch bản gọi) */}
+      {callScriptModalGuest && (() => {
+        const scriptInfo = getCampaignTelesalesDetails(callScriptModalGuest);
+        return (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4"
+            onClick={() => setCallScriptModalGuest(null)}
+          >
+            <div
+              className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="px-6 py-4 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-[#1A73E8] text-white flex items-center justify-center shadow-xs shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base font-bold text-gray-900">
+                        Chi tiết kịch bản gọi — Mã chiến dịch:
+                      </h2>
+                      <span className="px-2.5 py-0.5 bg-blue-100 text-[#1A73E8] border border-blue-200 rounded-md text-xs font-bold font-mono">
+                        {scriptInfo.code}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Chương trình: <span className="font-semibold text-gray-800">{scriptInfo.name}</span> (Module Quản lý chiết khấu)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCallScriptModalGuest(null)}
+                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                  title="Đóng"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto space-y-4 bg-gray-50/40">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Field 1: Mục tiêu chương trình */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-blue-100 text-[#1A73E8] rounded text-xs font-bold">
+                        1
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Mục tiêu chương trình
+                      </h4>
+                    </div>
+                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      {scriptInfo.goal}
+                    </div>
+                  </div>
+
+                  {/* Field 2: Từ khóa & Thông điệp trọng tâm */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">
+                        2
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Từ khóa &amp; Thông điệp trọng tâm
+                      </h4>
+                    </div>
+                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      {scriptInfo.keywords}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Field 3: Kịch bản gọi chi tiết (Khách hàng mới) */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
+                        3
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Kịch bản gọi chi tiết (Khách hàng mới)
+                      </h4>
+                    </div>
+                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      {scriptInfo.newCustomerScript}
+                    </div>
+                  </div>
+
+                  {/* Field 4: Kịch bản gọi chi tiết (Khách hàng cũ) */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-bold">
+                        4
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Kịch bản gọi chi tiết (Khách hàng cũ)
+                      </h4>
+                    </div>
+                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      {scriptInfo.existingCustomerScript}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-3.5 bg-white border-t border-gray-200 flex items-center justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCallScriptModalGuest(null)}
+                  className="px-5 py-2 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Duplicate Check Popup Modal */}
       {duplicateCheckRecord && (() => {
         const dupInfo = getDuplicateInfo(duplicateCheckRecord);
@@ -2864,398 +3244,707 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
               </button>
             </div>
 
-            {/* Main 2-Column Body */}
+            {/* Main 3-Column Body */}
             <div className="flex-1 flex min-h-0 overflow-hidden">
-              {/* Left Column: Identical to Guest Profile Modal, buttons hidden & all fields read-only */}
-              <div className="w-[54%] border-r border-gray-200 p-5 flex flex-col justify-between overflow-hidden bg-white">
-                <div className="space-y-5 overflow-hidden">
-                  {/* Top Identity (Read-only, buttons hidden) */}
-                  <div className="space-y-3 pb-4 border-b border-gray-100">
-                    <div className="flex items-start justify-between gap-4">
+              {/* Column 1: Thông tin chung (Expanded width into Column 2, compact layout to minimize vertical scrolling) */}
+              <div className="w-[40%] shrink-0 border-r border-gray-200 p-3 flex flex-col justify-between overflow-hidden bg-white">
+                {(() => {
+                  const telesalesDetails = getCampaignTelesalesDetails(currentGuest);
+                  return (
+                    <div className="space-y-2 overflow-y-auto pr-0.5">
+                      {/* Top Identity & Action Buttons (Gửi Zalo, Gửi email) on a compact row */}
+                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-100 flex-wrap">
+                        <div className="flex items-baseline gap-2.5 min-w-0">
+                          <h3 className="text-base font-bold text-gray-900 truncate">
+                            {currentGuest.fullName}
+                          </h3>
+                          <span className="text-[11px] text-gray-500 whitespace-nowrap">
+                            Ngày tạo:{' '}
+                            <span className="font-medium text-gray-700">
+                              {currentGuest.registrationDate}
+                            </span>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedZaloRecord(currentGuest);
+                              setZaloContent(getZaloDefaultContent(currentGuest));
+                              setZaloAttachments([]);
+                              setZaloModalOpen(true);
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#0068FF] rounded-md text-xs font-semibold transition-colors border border-blue-200 cursor-pointer"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            Gửi Zalo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEmailModalForRecord(currentGuest)}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-md text-xs font-semibold transition-colors border border-gray-200 cursor-pointer"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            Gửi email
+                          </button>
+                          <span
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${
+                              currentGuest.status === 'Xe đã đến'
+                                ? 'bg-green-100 text-green-700 border-green-200'
+                                : currentGuest.status === 'Đã xác nhận'
+                                ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                : currentGuest.status === 'Chờ xác nhận'
+                                ? 'bg-amber-100 text-amber-700 border-amber-200'
+                                : currentGuest.status === 'Bỏ hẹn'
+                                ? 'bg-orange-100 text-orange-700 border-orange-200'
+                                : currentGuest.status === 'Chờ xóa'
+                                ? 'bg-gray-200 text-gray-700 border-gray-300'
+                                : 'bg-red-100 text-red-700 border-red-200'
+                            }`}
+                          >
+                            {currentGuest.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* THÔNG TIN CHUNG */}
                       <div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-0.5">
-                          {currentGuest.fullName}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          Ngày tạo:{' '}
-                          <span className="font-medium text-gray-700">
-                            {currentGuest.registrationDate}
-                          </span>
-                        </p>
-                      </div>
-                      <span
-                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg border ${
-                          currentGuest.status === 'Xe đã đến'
-                            ? 'bg-green-100 text-green-700 border-green-200'
-                            : currentGuest.status === 'Đã xác nhận'
-                            ? 'bg-blue-100 text-blue-700 border-blue-200'
-                            : currentGuest.status === 'Chờ xác nhận'
-                            ? 'bg-amber-100 text-amber-700 border-amber-200'
-                            : currentGuest.status === 'Bỏ hẹn'
-                            ? 'bg-orange-100 text-orange-700 border-orange-200'
-                            : currentGuest.status === 'Chờ xóa'
-                            ? 'bg-gray-200 text-gray-700 border-gray-300'
-                            : 'bg-red-100 text-red-700 border-red-200'
-                        }`}
-                      >
-                        {currentGuest.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* THÔNG TIN CHUNG (Read-only) */}
-                  <div>
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                      THÔNG TIN CHUNG
-                    </h4>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
-                      <div
-                        className={`p-2.5 rounded-lg border ${
-                          guestDupInfo.isPhoneDuplicate
-                            ? 'bg-red-50/60 border-red-200'
-                            : 'bg-gray-50 border-gray-100'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1.5 mb-1 whitespace-nowrap">
-                          <span className="text-xs text-gray-500 shrink-0">
-                            Số điện thoại
-                          </span>
-                          {guestDupInfo.isPhoneDuplicate && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[11px] font-semibold whitespace-nowrap shrink-0">
-                              <ShieldAlert className="w-3 h-3 shrink-0 text-red-600" />
-                              <span className="whitespace-nowrap">
-                                Trùng:{' '}
-                                {guestDupInfo.matchedCustomers
-                                  .filter((m) => m.phoneMatch)
-                                  .map((m) => m.customer.customerName)
-                                  .join(', ')}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                        <div className="font-semibold text-gray-800 flex items-center gap-2 whitespace-nowrap">
-                          <Phone
-                            className={`w-3.5 h-3.5 shrink-0 ${
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                          THÔNG TIN CHUNG
+                        </h4>
+                        <div className="grid grid-cols-3 gap-1.5 text-xs">
+                          <div
+                            className={`p-1.5 rounded-lg border ${
                               guestDupInfo.isPhoneDuplicate
-                                ? 'text-red-500'
-                                : 'text-gray-400'
-                            }`}
-                          />
-                          <span
-                            className={`whitespace-nowrap ${
-                              guestDupInfo.isPhoneDuplicate
-                                ? 'text-red-700'
-                                : ''
+                                ? 'bg-red-50/60 border-red-200'
+                                : 'bg-gray-50 border-gray-100'
                             }`}
                           >
-                            {currentGuest.phone}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`p-2.5 rounded-lg border ${
-                          guestDupInfo.isEmailDuplicate
-                            ? 'bg-red-50/60 border-red-200'
-                            : 'bg-gray-50 border-gray-100'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1.5 mb-1 whitespace-nowrap">
-                          <span className="text-xs text-gray-500 shrink-0">
-                            Email
-                          </span>
-                          {guestDupInfo.isEmailDuplicate && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[11px] font-semibold whitespace-nowrap shrink-0">
-                              <ShieldAlert className="w-3 h-3 shrink-0 text-red-600" />
-                              <span className="whitespace-nowrap">
-                                Trùng:{' '}
-                                {
-                                  guestDupInfo.matchedCustomers.filter(
-                                    (m) => m.emailMatch
-                                  ).length
-                                }{' '}
-                                records
+                            <div className="flex items-center justify-between gap-1 mb-0.5 whitespace-nowrap">
+                              <span className="text-[11px] text-gray-500 shrink-0">
+                                Số điện thoại
                               </span>
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          className="font-semibold text-gray-800 flex items-center gap-2 whitespace-nowrap"
-                          title={currentGuest.email}
-                        >
-                          <Mail
-                            className={`w-3.5 h-3.5 shrink-0 ${
-                              guestDupInfo.isEmailDuplicate
-                                ? 'text-red-500'
-                                : 'text-gray-400'
-                            }`}
-                          />
-                          <span
-                            className={`whitespace-nowrap ${
-                              guestDupInfo.isEmailDuplicate
-                                ? 'text-red-700'
-                                : ''
-                            }`}
-                          >
-                            {currentGuest.email}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-1">
-                          Trạng thái cuộc gọi
-                        </div>
-                        <div className="font-semibold text-gray-800">
-                          {currentGuest.callStatus}
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-1">
-                          Kết quả cuộc gọi
-                        </div>
-                        <div className="font-semibold text-gray-800">
-                          {currentGuest.callResult}
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-0.5">
-                          Nguồn
-                        </div>
-                        <div className="flex items-center gap-2 font-semibold text-gray-800">
-                          {renderSourceIcon(currentGuest.source)}
-                          <span>{currentGuest.source}</span>
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-0.5">
-                          Mã người dùng (Kênh)
-                        </div>
-                        <div className="font-mono font-semibold text-gray-800">
-                          {currentGuest.channelUserCode}
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-0.5">
-                          Mã chiến dịch
-                        </div>
-                        <div className="font-semibold text-[#1A73E8]">
-                          {currentGuest.code}
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-0.5">
-                          Tên chiến dịch
-                        </div>
-                        <div
-                          className="font-semibold text-gray-800 truncate"
-                          title={currentGuest.name}
-                        >
-                          {currentGuest.name}
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-0.5">
-                          Ngày hẹn
-                        </div>
-                        <div className="font-semibold text-gray-800 flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                          <span>{currentGuest.appointmentDate}</span>
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-0.5">
-                          Khung giờ hẹn
-                        </div>
-                        <div className="font-semibold text-gray-800">
-                          {currentGuest.appointmentTimeSlot}
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-1">
-                          Nhu cầu
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {currentGuest.demands.length === 0 ? (
-                            <span className="text-xs text-gray-400">
-                              Chưa chọn nhu cầu
-                            </span>
-                          ) : (
-                            currentGuest.demands.map((d) => (
+                              {guestDupInfo.isPhoneDuplicate && (
+                                <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-red-100 text-red-700 text-[10px] font-semibold truncate">
+                                  <ShieldAlert className="w-2.5 h-2.5 shrink-0 text-red-600" />
+                                  <span className="truncate">Trùng</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-semibold text-gray-800 flex items-center gap-1.5 whitespace-nowrap">
+                              <Phone
+                                className={`w-3 h-3 shrink-0 ${
+                                  guestDupInfo.isPhoneDuplicate
+                                    ? 'text-red-500'
+                                    : 'text-gray-400'
+                                }`}
+                              />
                               <span
-                                key={d}
-                                className="px-2 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-xs font-medium"
+                                className={`whitespace-nowrap ${
+                                  guestDupInfo.isPhoneDuplicate
+                                    ? 'text-red-700'
+                                    : ''
+                                }`}
                               >
-                                {d}
+                                {currentGuest.phone}
                               </span>
-                            ))
-                          )}
+                            </div>
+                          </div>
+
+                          <div
+                            className={`p-1.5 rounded-lg border ${
+                              guestDupInfo.isEmailDuplicate
+                                ? 'bg-red-50/60 border-red-200'
+                                : 'bg-gray-50 border-gray-100'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-0.5 whitespace-nowrap">
+                              <span className="text-[11px] text-gray-500 shrink-0">
+                                Email
+                              </span>
+                              {guestDupInfo.isEmailDuplicate && (
+                                <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-red-100 text-red-700 text-[10px] font-semibold whitespace-nowrap shrink-0">
+                                  <ShieldAlert className="w-2.5 h-2.5 shrink-0 text-red-600" />
+                                  <span>
+                                    Trùng:{' '}
+                                    {
+                                      guestDupInfo.matchedCustomers.filter(
+                                        (m) => m.emailMatch
+                                      ).length
+                                    }
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className="font-semibold text-gray-800 flex items-center gap-1.5 whitespace-nowrap"
+                              title={currentGuest.email}
+                            >
+                              <Mail
+                                className={`w-3 h-3 shrink-0 ${
+                                  guestDupInfo.isEmailDuplicate
+                                    ? 'text-red-500'
+                                    : 'text-gray-400'
+                                }`}
+                              />
+                              <span
+                                className={`whitespace-nowrap truncate ${
+                                  guestDupInfo.isEmailDuplicate
+                                    ? 'text-red-700'
+                                    : ''
+                                }`}
+                              >
+                                {currentGuest.email}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Nguồn
+                            </div>
+                            <div className="flex items-center gap-1.5 font-semibold text-gray-800 truncate">
+                              {renderSourceIcon(currentGuest.source)}
+                              <span className="truncate">{currentGuest.source}</span>
+                            </div>
+                          </div>
+
+                          {/* Trạng thái cuộc gọi (cho phép chỉnh) */}
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Trạng thái cuộc gọi
+                            </div>
+                            <select
+                              value={currentGuest.callStatus}
+                              onChange={(e) =>
+                                handleCallStatusChange(
+                                  currentGuest.id,
+                                  e.target.value as any
+                                )
+                              }
+                              className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-white outline-none focus:border-[#1A73E8] cursor-pointer"
+                            >
+                              <option value="Chưa gọi">Chưa gọi</option>
+                              <option value="Đã gọi">Đã gọi</option>
+                            </select>
+                          </div>
+
+                          {/* Kết quả cuộc gọi (cho phép chỉnh) */}
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Kết quả cuộc gọi
+                            </div>
+                            <select
+                              value={currentGuest.callResult}
+                              onChange={(e) =>
+                                handleCallResultChange(
+                                  currentGuest.id,
+                                  e.target.value as any
+                                )
+                              }
+                              className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-white outline-none focus:border-[#1A73E8] cursor-pointer"
+                            >
+                              <option value="Rỗng">Rỗng</option>
+                              <option value="Đồng ý tham gia">Đồng ý tham gia</option>
+                              <option value="Từ chối">Từ chối</option>
+                              <option value="Sai số điện thoại">Sai số điện thoại</option>
+                              <option value="Không liên hệ được lần 1">
+                                Không liên hệ được lần 1
+                              </option>
+                              <option value="Không liên hệ được lần 2">
+                                Không liên hệ được lần 2
+                              </option>
+                              <option value="Không liên hệ được lần 3">
+                                Không liên hệ được lần 3
+                              </option>
+                            </select>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Mã người dùng (Kênh)
+                            </div>
+                            <div className="font-mono font-semibold text-gray-800 truncate">
+                              {currentGuest.channelUserCode}
+                            </div>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Mã chiến dịch
+                            </div>
+                            <div className="font-semibold text-[#1A73E8] truncate">
+                              {currentGuest.code}
+                            </div>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100 col-span-2">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Tên chiến dịch
+                            </div>
+                            <div
+                              className="font-semibold text-gray-800 truncate"
+                              title={currentGuest.name}
+                            >
+                              {currentGuest.name}
+                            </div>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Ngày hẹn
+                            </div>
+                            <div className="font-semibold text-gray-800 flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+                              <span>{currentGuest.appointmentDate}</span>
+                            </div>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Khung giờ hẹn
+                            </div>
+                            <div className="font-semibold text-gray-800">
+                              {currentGuest.appointmentTimeSlot}
+                            </div>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                            <div className="text-[11px] text-gray-500 mb-0.5">
+                              Nhu cầu
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {currentGuest.demands.length === 0 ? (
+                                <span className="text-[11px] text-gray-400">
+                                  Chưa chọn nhu cầu
+                                </span>
+                              ) : (
+                                currentGuest.demands.map((d) => (
+                                  <span
+                                    key={d}
+                                    className="px-1.5 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-[11px] font-medium"
+                                  >
+                                    {d}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 4 Field kịch bản chiến dịch ở dưới field Nhu cầu */}
+                          <div className="p-2 rounded-lg bg-gray-50 border border-gray-200 col-span-3">
+                            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
+                              Mục tiêu chương trình
+                            </div>
+                            <div className="text-[11px] text-gray-700 whitespace-pre-line leading-snug">
+                              {telesalesDetails.goal}
+                            </div>
+                          </div>
+
+                          <div className="p-2 rounded-lg bg-gray-50 border border-gray-200 col-span-3">
+                            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
+                              Từ khóa &amp; Thông điệp trọng tâm
+                            </div>
+                            <div className="text-[11px] text-gray-700 whitespace-pre-line leading-snug">
+                              {telesalesDetails.keywords}
+                            </div>
+                          </div>
+
+                          <div className="p-2 rounded-lg bg-blue-50/40 border border-blue-200 col-span-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold text-[#1A73E8]">
+                                Kịch bản gọi chi tiết (Khách hàng mới)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setShowBookingNewScript((prev) => !prev)
+                                }
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white hover:bg-blue-50 text-[#1A73E8] border border-blue-200 text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                              >
+                                {showBookingNewScript ? (
+                                  <>
+                                    <EyeOff className="w-3 h-3" />
+                                    Ẩn
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="w-3 h-3" />
+                                    Hiện
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            {showBookingNewScript && (
+                              <div className="mt-1.5 pt-1.5 border-t border-blue-100 text-[11px] text-gray-800 whitespace-pre-line leading-snug">
+                                {telesalesDetails.newCustomerScript}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="p-2 rounded-lg bg-emerald-50/40 border border-emerald-200 col-span-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold text-emerald-700">
+                                Kịch bản gọi chi tiết (Khách hàng cũ)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setShowBookingExistingScript((prev) => !prev)
+                                }
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                              >
+                                {showBookingExistingScript ? (
+                                  <>
+                                    <EyeOff className="w-3 h-3" />
+                                    Ẩn
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="w-3 h-3" />
+                                    Hiện
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            {showBookingExistingScript && (
+                              <div className="mt-1.5 pt-1.5 border-t border-emerald-100 text-[11px] text-gray-800 whitespace-pre-line leading-snug">
+                                {telesalesDetails.existingCustomerScript}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
-              {/* Right Column: Booking Form */}
-              <div className="flex-1 flex flex-col min-w-0 bg-gray-50/40 overflow-y-auto p-6">
+              {/* Column 2: Thông tin tạo Lịch hẹn Khách đặt (No vertical scroll) */}
+              <div className="w-[37%] shrink-0 border-r border-gray-200 flex flex-col min-w-0 bg-gray-50/40 overflow-hidden p-3.5">
                 <form
                   onSubmit={handleConfirmCreateCustomerBooking}
-                  className="bg-white border border-gray-200 rounded-xl shadow-xs p-6 space-y-5 max-w-2xl"
+                  className="bg-white border border-gray-200 rounded-xl shadow-xs p-4 space-y-2.5 w-full flex-1 flex flex-col justify-between overflow-hidden"
                 >
-                  <div className="border-b border-gray-100 pb-3">
-                    <h3 className="text-base font-bold text-gray-900">
-                      Thông tin tạo Lịch hẹn Khách đặt
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Kiểm tra và bổ sung thông tin lịch hẹn cho khách hàng{' '}
-                      <span className="font-semibold text-gray-700">
-                        {currentGuest.fullName}
-                      </span>
-                    </p>
-                  </div>
-
-                  {bookingFormError && (
-                    <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-medium rounded-lg">
-                      {bookingFormError}
+                  <div className="space-y-2.5 overflow-hidden">
+                    <div className="border-b border-gray-100 pb-2">
+                      <h3 className="text-sm font-bold text-gray-900">
+                        Thông tin tạo Lịch hẹn Khách đặt
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Kiểm tra và bổ sung thông tin lịch hẹn cho khách hàng{' '}
+                        <span className="font-semibold text-gray-700">
+                          {currentGuest.fullName}
+                        </span>
+                      </p>
                     </div>
-                  )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Ngày hẹn */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                        Ngày hẹn <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
+                    {bookingFormError && (
+                      <div className="p-2 bg-red-50 border border-red-200 text-red-700 text-xs font-medium rounded-lg">
+                        {bookingFormError}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {/* Điện thoại (ở trước field Ngày hẹn, nằm trên 1 dòng) */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Điện thoại <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <Phone className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2 pointer-events-none" />
+                          <input
+                            type="text"
+                            required
+                            placeholder="Nhập số ĐT..."
+                            value={bookingPhone}
+                            onChange={(e) => {
+                              setBookingPhone(e.target.value);
+                              setBookingFormError('');
+                            }}
+                            className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Ngày hẹn */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Ngày hẹn <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            placeholder="DD/MM/YYYY"
+                            value={bookingDate}
+                            onChange={(e) => {
+                              setBookingDate(e.target.value);
+                              setBookingFormError('');
+                            }}
+                            className="w-full px-2.5 pr-7 py-1.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
+                          />
+                          <Calendar className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Khung giờ hẹn */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Khung giờ hẹn <span className="text-red-500">*</span>
+                        </label>
                         <input
                           type="text"
                           required
-                          placeholder="DD/MM/YYYY"
-                          value={bookingDate}
+                          placeholder="VD: 08:00 - 10:00"
+                          value={bookingTimeSlot}
                           onChange={(e) => {
-                            setBookingDate(e.target.value);
+                            setBookingTimeSlot(e.target.value);
                             setBookingFormError('');
                           }}
-                          className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
+                          className="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
                         />
-                        <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
                       </div>
                     </div>
 
-                    {/* Khung giờ hẹn */}
+                    {/* Yêu cầu dịch vụ: dạng text */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                        Khung giờ hẹn <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Yêu cầu dịch vụ
                       </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="VD: 08:00 - 10:00"
-                        value={bookingTimeSlot}
-                        onChange={(e) => {
-                          setBookingTimeSlot(e.target.value);
-                          setBookingFormError('');
-                        }}
-                        className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
+                      <textarea
+                        rows={1}
+                        placeholder="Nhập yêu cầu dịch vụ của khách hàng..."
+                        value={bookingServiceRequest}
+                        onChange={(e) => setBookingServiceRequest(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15 resize-none"
                       />
                     </div>
-                  </div>
 
-                  {/* Điện thoại */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Điện thoại <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3 pointer-events-none" />
-                      <input
-                        type="text"
-                        required
-                        placeholder="Nhập số điện thoại..."
-                        value={bookingPhone}
-                        onChange={(e) => {
-                          setBookingPhone(e.target.value);
-                          setBookingFormError('');
-                        }}
-                        className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Yêu cầu dịch vụ: dạng text */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Yêu cầu dịch vụ
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="Nhập yêu cầu dịch vụ của khách hàng..."
-                      value={bookingServiceRequest}
-                      onChange={(e) => setBookingServiceRequest(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/15 resize-y"
-                    />
-                  </div>
-
-                  {/* Dịch vụ góp ý: dạng tags hiển thị sẵn 1 số cái */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Dịch vụ góp ý
-                    </label>
-                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex flex-wrap gap-2">
-                        {DEFAULT_SUGGESTED_SERVICE_TAGS.map((tag) => {
-                          const isSelected = bookingSuggestedTags.includes(tag);
-                          return (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => handleToggleSuggestedTag(tag)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-                                isSelected
-                                  ? 'bg-blue-50 text-[#1A73E8] border-blue-300 shadow-2xs'
-                                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                              }`}
-                            >
-                              <span>{tag}</span>
-                              {isSelected && (
-                                <X className="w-3 h-3 text-[#1A73E8]" />
-                              )}
-                            </button>
-                          );
-                        })}
+                    {/* Dịch vụ góp ý: dạng tags hiển thị sẵn 1 số cái */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Dịch vụ góp ý
+                      </label>
+                      <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex flex-wrap gap-1.5">
+                          {DEFAULT_SUGGESTED_SERVICE_TAGS.map((tag) => {
+                            const isSelected = bookingSuggestedTags.includes(tag);
+                            return (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => handleToggleSuggestedTag(tag)}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-blue-50 text-[#1A73E8] border-blue-300 shadow-2xs'
+                                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <span>{tag}</span>
+                                {isSelected && (
+                                  <X className="w-3 h-3 text-[#1A73E8]" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4 items-start">
-                    {/* Left: Biển số xe (không bắt buộc - cho phép chọn nhiều) + Danh sách Xe sử dụng below it */}
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3 items-start">
+                      {/* Left: Biển số xe (không bắt buộc - cho phép chọn nhiều) + Danh sách Xe sử dụng below it */}
+                      <div className="space-y-2.5">
+                        <div className="relative">
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Biển số xe{' '}
+                            <span className="font-normal text-gray-400">
+                              (không bắt buộc - chọn nhiều)
+                            </span>
+                          </label>
+                          <div className="min-h-[36px] px-2.5 py-1 bg-white border border-gray-300 rounded-lg focus-within:border-[#1A73E8] focus-within:ring-2 focus-within:ring-[#1A73E8]/15 flex flex-wrap items-center gap-1 pr-7 relative">
+                            {bookingLicensePlates.map((plate) => (
+                              <span
+                                key={plate}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-xs font-semibold"
+                              >
+                                <span>{plate}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleLicensePlate(plate)}
+                                  className="text-[#1A73E8] hover:text-blue-800 cursor-pointer"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                            <input
+                              type="text"
+                              placeholder={
+                                bookingLicensePlates.length === 0
+                                  ? 'Chọn hoặc nhập biển số xe...'
+                                  : 'Thêm biển số...'
+                              }
+                              value={bookingLicensePlate}
+                              onChange={(e) => {
+                                setBookingLicensePlate(e.target.value);
+                                setIsLicensePlateDropdownOpen(true);
+                              }}
+                              onFocus={() => setIsLicensePlateDropdownOpen(true)}
+                              onBlur={() =>
+                                setTimeout(
+                                  () => setIsLicensePlateDropdownOpen(false),
+                                  200
+                                )
+                              }
+                              onKeyDown={(e) => {
+                                if (
+                                  e.key === 'Enter' &&
+                                  bookingLicensePlate.trim()
+                                ) {
+                                  e.preventDefault();
+                                  const val = bookingLicensePlate.trim();
+                                  if (!bookingLicensePlates.includes(val)) {
+                                    setBookingLicensePlates((prev) => [
+                                      ...prev,
+                                      val,
+                                    ]);
+                                  }
+                                  setBookingLicensePlate('');
+                                }
+                              }}
+                              className="flex-1 min-w-[100px] text-sm text-gray-800 outline-none bg-transparent"
+                            />
+                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                          </div>
+                          {isLicensePlateDropdownOpen && (
+                            <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-44 overflow-y-auto py-1">
+                              {filteredLicensePlates.map((item) => {
+                                const isSelected = bookingLicensePlates.includes(
+                                  item.plate
+                                );
+                                return (
+                                  <div
+                                    key={item.plate}
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      handleToggleLicensePlate(item.plate);
+                                      setBookingLicensePlate('');
+                                    }}
+                                    className={`px-3 py-1.5 text-sm hover:bg-blue-50/70 cursor-pointer flex items-center justify-between ${
+                                      isSelected
+                                        ? 'bg-blue-50/40 text-[#1A73E8]'
+                                        : 'text-gray-800'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        readOnly
+                                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
+                                      />
+                                      <span className="font-bold text-gray-900">
+                                        {item.plate}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {item.carModel}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                              {bookingLicensePlate.trim() &&
+                                !MASTER_LICENSE_PLATES.some(
+                                  (item) =>
+                                    item.plate.toLowerCase() ===
+                                    bookingLicensePlate.trim().toLowerCase()
+                                ) && (
+                                  <div
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      const newPlate = bookingLicensePlate.trim();
+                                      if (
+                                        !bookingLicensePlates.includes(newPlate)
+                                      ) {
+                                        setBookingLicensePlates((prev) => [
+                                          ...prev,
+                                          newPlate,
+                                        ]);
+                                      }
+                                      setBookingLicensePlate('');
+                                      setIsLicensePlateDropdownOpen(false);
+                                    }}
+                                    className="px-3 py-1.5 text-xs text-[#1A73E8] bg-blue-50/50 hover:bg-blue-50 cursor-pointer font-medium border-t border-gray-100"
+                                  >
+                                    + Thêm biển số mới: &quot;
+                                    {bookingLicensePlate.trim()}&quot;
+                                  </div>
+                                )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Danh sách Xe sử dụng (hiển thị bên dưới field Biển số xe) */}
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Danh sách Xe sử dụng
+                          </label>
+                          <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div className="flex flex-wrap gap-1.5">
+                              {customerVehicles.map((vehicle) => {
+                                const isTicked = bookingLicensePlates.includes(
+                                  vehicle.plate
+                                );
+                                return (
+                                  <button
+                                    key={`${vehicle.plate}-${vehicle.carModel}`}
+                                    type="button"
+                                    onClick={() =>
+                                      handleToggleLicensePlate(vehicle.plate)
+                                    }
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                                      isTicked
+                                        ? 'bg-blue-50 text-[#1A73E8] border-blue-300 shadow-2xs'
+                                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isTicked}
+                                      readOnly
+                                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
+                                    />
+                                    <span>
+                                      {vehicle.plate} - {vehicle.carModel}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Dòng xe (không bắt buộc - cho phép chọn nhiều) */}
                       <div className="relative">
-                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                          Biển số xe{' '}
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Dòng xe{' '}
                           <span className="font-normal text-gray-400">
-                            (không bắt buộc - cho phép chọn nhiều)
+                            (không bắt buộc - chọn nhiều)
                           </span>
                         </label>
-                        <div className="min-h-[42px] px-3 py-2 bg-white border border-gray-300 rounded-lg focus-within:border-[#1A73E8] focus-within:ring-2 focus-within:ring-[#1A73E8]/15 flex flex-wrap items-center gap-1.5 pr-8 relative">
-                          {bookingLicensePlates.map((plate) => (
+                        <div className="min-h-[36px] px-2.5 py-1 bg-white border border-gray-300 rounded-lg focus-within:border-[#1A73E8] focus-within:ring-2 focus-within:ring-[#1A73E8]/15 flex flex-wrap items-center gap-1 pr-7 relative">
+                          {bookingCarModels.map((model) => (
                             <span
-                              key={plate}
+                              key={model}
                               className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-xs font-semibold"
                             >
-                              <span>{plate}</span>
+                              <span>{model}</span>
                               <button
                                 type="button"
-                                onClick={() => handleToggleLicensePlate(plate)}
+                                onClick={() => handleToggleCarModel(model)}
                                 className="text-[#1A73E8] hover:text-blue-800 cursor-pointer"
                               >
                                 <X className="w-3 h-3" />
@@ -3265,261 +3954,367 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                           <input
                             type="text"
                             placeholder={
-                              bookingLicensePlates.length === 0
-                                ? 'Chọn hoặc nhập biển số xe...'
-                                : 'Thêm biển số...'
+                              bookingCarModels.length === 0
+                                ? 'Gõ tìm Hiệu xe - Dòng xe...'
+                                : 'Thêm dòng xe...'
                             }
-                            value={bookingLicensePlate}
+                            value={bookingCarModel}
                             onChange={(e) => {
-                              setBookingLicensePlate(e.target.value);
-                              setIsLicensePlateDropdownOpen(true);
+                              setBookingCarModel(e.target.value);
+                              setIsCarModelDropdownOpen(true);
                             }}
-                            onFocus={() => setIsLicensePlateDropdownOpen(true)}
+                            onFocus={() => setIsCarModelDropdownOpen(true)}
                             onBlur={() =>
                               setTimeout(
-                                () => setIsLicensePlateDropdownOpen(false),
+                                () => setIsCarModelDropdownOpen(false),
                                 200
                               )
                             }
-                            onKeyDown={(e) => {
-                              if (
-                                e.key === 'Enter' &&
-                                bookingLicensePlate.trim()
-                              ) {
-                                e.preventDefault();
-                                const val = bookingLicensePlate.trim();
-                                if (!bookingLicensePlates.includes(val)) {
-                                  setBookingLicensePlates((prev) => [
-                                    ...prev,
-                                    val,
-                                  ]);
-                                }
-                                setBookingLicensePlate('');
-                              }
-                            }}
-                            className="flex-1 min-w-[120px] text-sm text-gray-800 outline-none bg-transparent"
+                            className="flex-1 min-w-[100px] text-sm text-gray-800 outline-none bg-transparent"
                           />
-                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
                         </div>
-                        {isLicensePlateDropdownOpen && (
-                          <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto py-1">
-                            {filteredLicensePlates.map((item) => {
-                              const isSelected = bookingLicensePlates.includes(
-                                item.plate
-                              );
-                              return (
-                                <div
-                                  key={item.plate}
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    handleToggleLicensePlate(item.plate);
-                                    setBookingLicensePlate('');
-                                  }}
-                                  className={`px-3.5 py-2 text-sm hover:bg-blue-50/70 cursor-pointer flex items-center justify-between ${
-                                    isSelected
-                                      ? 'bg-blue-50/40 text-[#1A73E8]'
-                                      : 'text-gray-800'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      readOnly
-                                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
-                                    />
-                                    <span className="font-bold text-gray-900">
-                                      {item.plate}
+                        {isCarModelDropdownOpen && (
+                          <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-44 overflow-y-auto py-1">
+                            {filteredCarModels.length === 0 ? (
+                              <div className="px-3 py-1.5 text-xs text-gray-500">
+                                Không tìm thấy dòng xe trong Master data
+                              </div>
+                            ) : (
+                              filteredCarModels.map((model) => {
+                                const isSelected =
+                                  bookingCarModels.includes(model);
+                                return (
+                                  <div
+                                    key={model}
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      handleToggleCarModel(model);
+                                      setBookingCarModel('');
+                                    }}
+                                    className={`px-3 py-1.5 text-sm hover:bg-blue-50/70 cursor-pointer flex items-center justify-between ${
+                                      isSelected
+                                        ? 'bg-blue-50/40 text-[#1A73E8]'
+                                        : 'text-gray-800'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        readOnly
+                                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
+                                      />
+                                      <span className="font-medium">{model}</span>
+                                    </div>
+                                    <span className="text-[11px] text-gray-400">
+                                      Master data
                                     </span>
                                   </div>
-                                  <span className="text-xs text-gray-500">
-                                    {item.carModel}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                            {bookingLicensePlate.trim() &&
-                              !MASTER_LICENSE_PLATES.some(
-                                (item) =>
-                                  item.plate.toLowerCase() ===
-                                  bookingLicensePlate.trim().toLowerCase()
-                              ) && (
-                                <div
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    const newPlate = bookingLicensePlate.trim();
-                                    if (
-                                      !bookingLicensePlates.includes(newPlate)
-                                    ) {
-                                      setBookingLicensePlates((prev) => [
-                                        ...prev,
-                                        newPlate,
-                                      ]);
-                                    }
-                                    setBookingLicensePlate('');
-                                    setIsLicensePlateDropdownOpen(false);
-                                  }}
-                                  className="px-3.5 py-2 text-xs text-[#1A73E8] bg-blue-50/50 hover:bg-blue-50 cursor-pointer font-medium border-t border-gray-100"
-                                >
-                                  + Thêm biển số mới: &quot;
-                                  {bookingLicensePlate.trim()}&quot;
-                                </div>
-                              )}
+                                );
+                              })
+                            )}
                           </div>
                         )}
                       </div>
-
-                      {/* Danh sách Xe sử dụng (hiển thị bên dưới field Biển số xe) */}
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                          Danh sách Xe sử dụng
-                        </label>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <div className="flex flex-wrap gap-2">
-                            {customerVehicles.map((vehicle) => {
-                              const isTicked = bookingLicensePlates.includes(
-                                vehicle.plate
-                              );
-                              return (
-                                <button
-                                  key={`${vehicle.plate}-${vehicle.carModel}`}
-                                  type="button"
-                                  onClick={() =>
-                                    handleToggleLicensePlate(vehicle.plate)
-                                  }
-                                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                                    isTicked
-                                      ? 'bg-blue-50 text-[#1A73E8] border-blue-300 shadow-2xs'
-                                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isTicked}
-                                    readOnly
-                                    className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
-                                  />
-                                  <span>
-                                    {vehicle.plate} - {vehicle.carModel}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Dòng xe (không bắt buộc - cho phép chọn nhiều) */}
-                    <div className="relative">
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                        Dòng xe{' '}
-                        <span className="font-normal text-gray-400">
-                          (không bắt buộc - cho phép chọn nhiều)
-                        </span>
-                      </label>
-                      <div className="min-h-[42px] px-3 py-2 bg-white border border-gray-300 rounded-lg focus-within:border-[#1A73E8] focus-within:ring-2 focus-within:ring-[#1A73E8]/15 flex flex-wrap items-center gap-1.5 pr-8 relative">
-                        {bookingCarModels.map((model) => (
-                          <span
-                            key={model}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[#1A73E8] border border-blue-200 rounded text-xs font-semibold"
-                          >
-                            <span>{model}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleCarModel(model)}
-                              className="text-[#1A73E8] hover:text-blue-800 cursor-pointer"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                        <input
-                          type="text"
-                          placeholder={
-                            bookingCarModels.length === 0
-                              ? 'Gõ tìm Hiệu xe - Dòng xe...'
-                              : 'Thêm dòng xe...'
-                          }
-                          value={bookingCarModel}
-                          onChange={(e) => {
-                            setBookingCarModel(e.target.value);
-                            setIsCarModelDropdownOpen(true);
-                          }}
-                          onFocus={() => setIsCarModelDropdownOpen(true)}
-                          onBlur={() =>
-                            setTimeout(
-                              () => setIsCarModelDropdownOpen(false),
-                              200
-                            )
-                          }
-                          className="flex-1 min-w-[120px] text-sm text-gray-800 outline-none bg-transparent"
-                        />
-                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
-                      </div>
-                      {isCarModelDropdownOpen && (
-                        <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto py-1">
-                          {filteredCarModels.length === 0 ? (
-                            <div className="px-3 py-2 text-xs text-gray-500">
-                              Không tìm thấy dòng xe trong Master data
-                            </div>
-                          ) : (
-                            filteredCarModels.map((model) => {
-                              const isSelected =
-                                bookingCarModels.includes(model);
-                              return (
-                                <div
-                                  key={model}
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    handleToggleCarModel(model);
-                                    setBookingCarModel('');
-                                  }}
-                                  className={`px-3.5 py-2 text-sm hover:bg-blue-50/70 cursor-pointer flex items-center justify-between ${
-                                    isSelected
-                                      ? 'bg-blue-50/40 text-[#1A73E8]'
-                                      : 'text-gray-800'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      readOnly
-                                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#1A73E8] pointer-events-none"
-                                    />
-                                    <span className="font-medium">{model}</span>
-                                  </div>
-                                  <span className="text-[11px] text-gray-400">
-                                    Master data
-                                  </span>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
 
                   {/* Submit Button */}
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+                  <div className="pt-2.5 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
                     <button
                       type="button"
                       onClick={() => setBookingModalRecord(null)}
-                      className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
                     >
                       Hủy
                     </button>
                     <button
                       type="submit"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-xs cursor-pointer"
+                      className="flex items-center gap-2 px-5 py-2 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-xs cursor-pointer"
                     >
                       <CalendarPlus className="w-4 h-4" />
                       Xác nhận Tạo
                     </button>
                   </div>
                 </form>
+              </div>
+
+              {/* Column 3: Tabs (Lịch sử, Ghi chú nội bộ, Lời nhắc & Công việc) */}
+              <div className="flex-1 flex flex-col min-w-0 bg-gray-50/40 overflow-hidden">
+                <div className="px-4 pt-3.5 border-b border-gray-200 bg-white shrink-0">
+                  <div className="flex gap-4 whitespace-nowrap">
+                    <button
+                      type="button"
+                      className={`pb-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                        activeTab === 'activity_history'
+                          ? 'border-[#1A73E8] text-[#1A73E8]'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                      onClick={() => setActiveTab('activity_history')}
+                    >
+                      Lịch sử
+                    </button>
+                    <button
+                      type="button"
+                      className={`pb-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                        activeTab === 'history'
+                          ? 'border-[#1A73E8] text-[#1A73E8]'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                      onClick={() => setActiveTab('history')}
+                    >
+                      Ghi chú nội bộ
+                    </button>
+                    <button
+                      type="button"
+                      className={`pb-2.5 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+                        activeTab === 'tasks'
+                          ? 'border-[#1A73E8] text-[#1A73E8]'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                      onClick={() => setActiveTab('tasks')}
+                    >
+                      Lời nhắc & Công việc
+                      <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                        {guestTasks[currentGuest.id]?.filter((t) => !t.completed).length || 0}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6">
+                  {activeTab === 'activity_history' && (
+                    <div>
+                      {!guestActivityHistory[currentGuest.id] ||
+                      guestActivityHistory[currentGuest.id].length === 0 ? (
+                        <div className="text-sm text-gray-500 py-8 text-center">
+                          Chưa có dữ liệu lịch sử hoạt động
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {guestActivityHistory[currentGuest.id].map((item) => (
+                            <div
+                              key={item.id}
+                              className="bg-white p-4 rounded-lg border border-gray-200 shadow-xs"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-gray-800">
+                                    {item.action}
+                                  </span>
+                                  <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                                    {item.author}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {item.timestamp}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                {item.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'history' && (
+                    <div>
+                      <div className="mb-6">
+                        <textarea
+                          value={noteContent}
+                          onChange={(e) => setNoteContent(e.target.value)}
+                          placeholder="Thêm ghi chú..."
+                          rows={3}
+                          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1A73E8]/20 focus:border-[#1A73E8] resize-y mb-3"
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={handleSaveNote}
+                            disabled={!noteContent.trim()}
+                            className="px-4 py-2 bg-[#1A73E8] hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium rounded-lg transition-colors"
+                          >
+                            Lưu ghi chú
+                          </button>
+                        </div>
+                      </div>
+
+                      <h3 className="text-sm font-bold text-gray-800 mb-4">
+                        Lịch sử
+                      </h3>
+                      {!guestHistory[currentGuest.id] ||
+                      guestHistory[currentGuest.id].length === 0 ? (
+                        <div className="text-sm text-gray-500 py-4 text-center">
+                          Chưa có lịch sử trao đổi
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {guestHistory[currentGuest.id].map((item) => (
+                            <div
+                              key={item.id}
+                              className="bg-white p-4 rounded-lg border border-gray-200 shadow-xs"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-gray-800">
+                                    Ghi chú
+                                  </span>
+                                  <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                                    {item.author}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {item.timestamp}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                {item.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'tasks' && (
+                    <div>
+                      <div className="flex gap-2 mb-6">
+                        <input
+                          type="text"
+                          value={taskContent}
+                          onChange={(e) => setTaskContent(e.target.value)}
+                          placeholder="Thêm lời nhắc mới..."
+                          className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1A73E8]/20 focus:border-[#1A73E8]"
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddTask}
+                          disabled={!taskContent.trim()}
+                          className="px-4 py-2 bg-[#1A73E8] hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          Thêm
+                        </button>
+                      </div>
+
+                      {!guestTasks[currentGuest.id] ||
+                      guestTasks[currentGuest.id].length === 0 ? (
+                        <div className="text-sm text-gray-500 py-4 text-center">
+                          Chưa có lời nhắc & công việc
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {guestTasks[currentGuest.id].map((task) => (
+                            <div
+                              key={task.id}
+                              className={`flex items-start gap-3 p-3 rounded-lg border ${
+                                task.completed
+                                  ? 'bg-gray-50 border-gray-200'
+                                  : 'bg-white border-gray-200 shadow-xs'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={task.completed}
+                                onChange={() => handleToggleTask(task.id)}
+                                className="mt-1 w-4 h-4 text-[#1A73E8] border-gray-300 rounded focus:ring-[#1A73E8]"
+                              />
+                              <div className="flex-1">
+                                {editingTaskId === task.id ? (
+                                  <div className="flex flex-col gap-2">
+                                    <input
+                                      type="text"
+                                      value={editTaskContent}
+                                      onChange={(e) =>
+                                        setEditTaskContent(e.target.value)
+                                      }
+                                      className="w-full px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A73E8]/20 focus:border-[#1A73E8]"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter')
+                                          handleSaveEditTask();
+                                        if (e.key === 'Escape')
+                                          handleCancelEditTask();
+                                      }}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={handleSaveEditTask}
+                                        disabled={!editTaskContent.trim()}
+                                        className="text-xs px-3 py-1 bg-[#1A73E8] text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+                                      >
+                                        Lưu
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={handleCancelEditTask}
+                                        className="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                                      >
+                                        Hủy
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <p
+                                        className={`text-sm ${
+                                          task.completed
+                                            ? 'text-gray-400 line-through'
+                                            : 'text-gray-800'
+                                        }`}
+                                      >
+                                        {task.content}
+                                      </p>
+                                      {!task.completed && (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleStartEditTask(task)
+                                          }
+                                          className="text-gray-400 hover:text-[#1A73E8] transition-colors"
+                                          title="Chỉnh sửa lời nhắc"
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          >
+                                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                                        {task.author}
+                                      </span>
+                                      <span className="text-xs text-gray-400">
+                                        {task.timestamp}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -3634,8 +4429,21 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
             <CustomerBookingsModule
               bookings={customerBookings}
               setBookings={setCustomerBookings}
+              discounts={discounts}
               filterPotentialCustomerId={bookingListModalCustomer.id}
               defaultPotentialCustomer={bookingListModalCustomer}
+              bookingInternalNotes={bookingInternalNotes}
+              setBookingInternalNotes={setBookingInternalNotes}
+              bookingTasks={bookingTasks}
+              setBookingTasks={setBookingTasks}
+              bookingActivities={bookingActivities}
+              setBookingActivities={setBookingActivities}
+              guestHistory={guestHistory}
+              setGuestHistory={setGuestHistory}
+              guestTasks={guestTasks}
+              setGuestTasks={setGuestTasks}
+              guestActivityHistory={guestActivityHistory}
+              setGuestActivityHistory={setGuestActivityHistory}
             />
           </div>
         </div>
