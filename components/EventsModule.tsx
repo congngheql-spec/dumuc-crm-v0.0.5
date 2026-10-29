@@ -23,6 +23,10 @@ export interface EventItem {
   roles?: string[];
   otherRole?: string;
   notes?: string;
+  campaignGoal?: string;
+  campaignKeywords?: string;
+  newCustomerScript?: string;
+  existingCustomerScript?: string;
 }
 
 export interface HistoryItem {
