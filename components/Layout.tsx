@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, List, ChevronDown, Bell, User, Store, Wrench } from 'lucide-react';
+import { Search, List, ChevronDown, Bell, User, Users, Store, Wrench, Tag } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -45,7 +45,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
           </div>
           <div 
             onClick={() => onNavigate?.('commercial_sales')}
-            className={`hidden items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'commercial_sales' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'commercial_sales' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             {currentView === 'commercial_sales' && (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
@@ -67,7 +67,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
           </div>
           <div 
             onClick={() => onNavigate?.('marketplace')}
-            className={`hidden items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'marketplace' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'marketplace' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             {currentView === 'marketplace' && (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
@@ -77,7 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
           </div>
           <div 
             onClick={() => onNavigate?.('online_ordering')}
-            className={`hidden items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'online_ordering' || currentView === 'supplier_homepage' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'online_ordering' || currentView === 'supplier_homepage' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             {(currentView === 'online_ordering' || currentView === 'supplier_homepage') && (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
@@ -89,7 +89,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
           </div>
           <div 
             onClick={() => onNavigate?.('purchase_orders')}
-            className={`hidden items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'purchase_orders' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'purchase_orders' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             {currentView === 'purchase_orders' && (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
@@ -113,7 +113,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
           </div>
           <div 
             onClick={() => onNavigate?.('registration_approval')}
-            className={`hidden items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'registration_approval' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'registration_approval' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             {currentView === 'registration_approval' && (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
@@ -183,6 +183,138 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
             </svg>
             <span className="text-sm font-medium">Đánh giá chất lượng dịch vụ</span>
           </div>
+
+          {/* HRM Modules */}
+          <div 
+            onClick={() => onNavigate?.('employee_list')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'employee_list' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'employee_list' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <Users className="w-5 h-5 mr-3" />
+            <span className="text-sm font-medium">Danh sách Nhân sự</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('labor_list')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'labor_list' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'labor_list' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="text-sm font-medium">Hồ sơ Hợp đồng</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('department_list')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'department_list' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'department_list' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <span className="text-sm font-medium">Phòng ban / Bộ phận</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('position_list')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'position_list' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'position_list' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span className="text-sm font-medium">Chức vụ / Vị trí</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('salary_grade_list')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'salary_grade_list' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'salary_grade_list' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span className="text-sm font-medium">Thang bảng Lương</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('contract_type_list')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'contract_type_list' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'contract_type_list' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+            </svg>
+            <span className="text-sm font-medium">Loại hợp đồng</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('salary_rule_group')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'salary_rule_group' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'salary_rule_group' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span className="text-sm font-medium">Nhóm quy tắc Lương</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('salary_structure')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'salary_structure' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'salary_structure' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span className="text-sm font-medium">Cấu trúc Lương</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('insurance_tax_params')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'insurance_tax_params' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'insurance_tax_params' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+            </svg>
+            <span className="text-sm font-medium">Tham số BHXH & Thuế</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('payroll_period')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'payroll_period' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'payroll_period' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-sm font-medium">Kỳ tính Lương</span>
+          </div>
+          <div 
+            onClick={() => onNavigate?.('payroll_table')}
+            className={`flex items-center px-3 py-2.5 rounded-md relative cursor-pointer transition-colors ${currentView === 'payroll_table' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            {currentView === 'payroll_table' && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+            )}
+            <svg className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span className="text-sm font-medium">Bảng lương</span>
+          </div>
         </nav>
 
         {/* Version Footer */}
@@ -208,14 +340,70 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
             {currentView === 'discount_management' && (
               <h1 className="text-xl font-bold text-gray-800 mr-8">Quản lý chiết khấu</h1>
             )}
-            <div className={`relative w-[400px] ${currentView === 'repair_service' || currentView === 'customers' || currentView === 'customer_bookings' || currentView === 'discount_management' ? '' : 'mx-auto'}`}>
-              <input 
-                type="text" 
-                placeholder="Tìm biển số xe" 
-                className="w-full border border-gray-300 rounded-md py-2 pl-4 pr-10 text-sm outline-none focus:border-blue-500 transition-colors" 
-              />
-              <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
-            </div>
+            {currentView === 'employee_list' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Danh sách Nhân sự</h1>
+            )}
+            {currentView === 'labor_list' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Hồ sơ Hợp đồng</h1>
+            )}
+            {currentView === 'department_list' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Bộ phận</h1>
+            )}
+            {currentView === 'position_list' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Chức vụ/ Vị trí</h1>
+            )}
+            {currentView === 'salary_grade_list' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Cấu trúc Thang bảng lương</h1>
+            )}
+            {currentView === 'contract_type_list' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Quản lý loại hợp đồng</h1>
+            )}
+            {currentView === 'salary_rule_group' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Nhóm quy tắc Lương</h1>
+            )}
+            {currentView === 'salary_structure' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Cấu trúc Lương</h1>
+            )}
+            {currentView === 'insurance_tax_params' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Tham số BHXH & Thuế</h1>
+            )}
+            {currentView === 'payroll_period' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Kỳ tính lương</h1>
+            )}
+            {currentView === 'payroll_table' && (
+              <h1 className="text-xl font-bold text-gray-800 mr-8">Bảng lương</h1>
+            )}
+            {['employee_list', 'labor_list', 'department_list', 'position_list', 'salary_grade_list', 'contract_type_list', 'salary_rule_group', 'salary_structure', 'insurance_tax_params', 'payroll_period', 'payroll_table'].includes(currentView) ? (
+              <div className="flex-1 flex justify-end gap-3 mr-6 items-center">
+                <button className="bg-[#1A4B9F] text-white px-4 py-1.5 rounded-[4px] text-sm font-medium flex items-center gap-2">
+                  <Tag className="w-4 h-4 fill-white" />
+                  Bán hàng
+                </button>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Tra cứu phụ tùng" 
+                    className="w-full border border-gray-300 rounded-full py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500" 
+                  />
+                </div>
+                <div className="relative w-[280px]">
+                  <select className="w-full border border-gray-300 rounded-full py-1.5 pl-3 pr-8 text-sm outline-none appearance-none bg-white text-gray-700">
+                    <option>[2026] - CTY TNHH SA...</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+            ) : (
+              <div className={`relative w-[400px] ${currentView === 'repair_service' || currentView === 'customers' || currentView === 'customer_bookings' || currentView === 'discount_management' ? '' : 'mx-auto'}`}>
+                <input 
+                  type="text" 
+                  placeholder="Tìm biển số xe" 
+                  className="w-full border border-gray-300 rounded-md py-2 pl-4 pr-10 text-sm outline-none focus:border-blue-500 transition-colors" 
+                />
+                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
+              </div>
+            )}
           </div>
           
           <div className="flex items-center space-x-6">

@@ -2833,125 +2833,117 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
         );
       })()}
 
-      {/* Call Script Popup Modal (Xem kịch bản gọi) */}
+      {/* Full-Screen Call Script Popup Modal (Xem kịch bản gọi) */}
       {callScriptModalGuest && (() => {
         const scriptInfo = getCampaignTelesalesDetails(callScriptModalGuest);
         return (
-          <div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4"
-            onClick={() => setCallScriptModalGuest(null)}
-          >
-            <div
-              className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="px-6 py-4 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[#1A73E8] text-white flex items-center justify-center shadow-xs shrink-0">
-                    <BookOpen className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-base font-bold text-gray-900">
-                        Chi tiết kịch bản gọi — Mã chiến dịch:
-                      </h2>
-                      <span className="px-2.5 py-0.5 bg-blue-100 text-[#1A73E8] border border-blue-200 rounded-md text-xs font-bold font-mono">
-                        {scriptInfo.code}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      Chương trình: <span className="font-semibold text-gray-800">{scriptInfo.name}</span> (Module Quản lý chiết khấu)
-                    </p>
-                  </div>
+          <div className="fixed inset-0 bg-white z-[70] flex flex-col w-screen h-screen overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#1A73E8] text-white flex items-center justify-center shadow-xs shrink-0">
+                  <BookOpen className="w-5 h-5" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setCallScriptModalGuest(null)}
-                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                  title="Đóng"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base font-bold text-gray-900">
+                      Chi tiết kịch bản gọi — Mã chiến dịch:
+                    </h2>
+                    <span className="px-2.5 py-0.5 bg-blue-100 text-[#1A73E8] border border-blue-200 rounded-md text-xs font-bold font-mono">
+                      {scriptInfo.code}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Chương trình: <span className="font-semibold text-gray-800">{scriptInfo.name}</span> (Module Quản lý chiết khấu)
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setCallScriptModalGuest(null)}
+                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                title="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Modal Body */}
-              <div className="p-6 overflow-y-auto space-y-4 bg-gray-50/40">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Field 1: Mục tiêu chương trình */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-blue-100 text-[#1A73E8] rounded text-xs font-bold">
-                        1
-                      </span>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        Mục tiêu chương trình
-                      </h4>
-                    </div>
-                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      {scriptInfo.goal}
-                    </div>
+            {/* Modal Body */}
+            <div className="flex-1 p-6 overflow-y-auto space-y-5 bg-gray-50/40">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Field 1: Mục tiêu chương trình */}
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-blue-100 text-[#1A73E8] rounded text-xs font-bold">
+                      1
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Mục tiêu chương trình
+                    </h4>
                   </div>
-
-                  {/* Field 2: Từ khóa & Thông điệp trọng tâm */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">
-                        2
-                      </span>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        Từ khóa &amp; Thông điệp trọng tâm
-                      </h4>
-                    </div>
-                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      {scriptInfo.keywords}
-                    </div>
+                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    {scriptInfo.goal}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Field 3: Kịch bản gọi chi tiết (Khách hàng mới) */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
-                        3
-                      </span>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        Kịch bản gọi chi tiết (Khách hàng mới)
-                      </h4>
-                    </div>
-                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      {scriptInfo.newCustomerScript}
-                    </div>
+                {/* Field 2: Từ khóa & Thông điệp trọng tâm */}
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">
+                      2
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Từ khóa &amp; Thông điệp trọng tâm
+                    </h4>
                   </div>
-
-                  {/* Field 4: Kịch bản gọi chi tiết (Khách hàng cũ) */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-bold">
-                        4
-                      </span>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        Kịch bản gọi chi tiết (Khách hàng cũ)
-                      </h4>
-                    </div>
-                    <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      {scriptInfo.existingCustomerScript}
-                    </div>
+                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    {scriptInfo.keywords}
                   </div>
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="px-6 py-3.5 bg-white border-t border-gray-200 flex items-center justify-end shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setCallScriptModalGuest(null)}
-                  className="px-5 py-2 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Đóng
-                </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Field 3: Kịch bản gọi chi tiết (Khách hàng mới) */}
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
+                      3
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Kịch bản gọi chi tiết (Khách hàng mới)
+                    </h4>
+                  </div>
+                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    {scriptInfo.newCustomerScript}
+                  </div>
+                </div>
+
+                {/* Field 4: Kịch bản gọi chi tiết (Khách hàng cũ) */}
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-bold">
+                      4
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Kịch bản gọi chi tiết (Khách hàng cũ)
+                    </h4>
+                  </div>
+                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    {scriptInfo.existingCustomerScript}
+                  </div>
+                </div>
               </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 bg-white border-t border-gray-200 flex items-center justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() => setCallScriptModalGuest(null)}
+                className="px-5 py-2 bg-[#1A73E8] hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
             </div>
           </div>
         );

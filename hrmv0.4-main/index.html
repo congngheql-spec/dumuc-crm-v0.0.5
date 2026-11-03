@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        try {
+          var _rawFetch = window.fetch ? window.fetch.bind(window) : null;
+          var _activeFetch = _rawFetch;
+
+          // Provide both getter and setter on window so scripts can reassign window.fetch safely
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return _activeFetch;
+            },
+            set: function(val) {
+              _activeFetch = val;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e1) {
+          try {
+            var _protoFetch = Window.prototype.fetch ? Window.prototype.fetch.bind(window) : null;
+            Object.defineProperty(Window.prototype, 'fetch', {
+              get: function() {
+                return _protoFetch;
+              },
+              set: function(val) {
+                _protoFetch = val;
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e2) {}
+        }
+
+        // Safety handler: prevent uncaught error if an external script tries to assign to a getter-only fetch
+        window.addEventListener('error', function(e) {
+          if (e && e.message && e.message.indexOf('Cannot set property fetch') !== -1) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+      })();
+    </script>
+    <title>Remix HRM v0.1</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

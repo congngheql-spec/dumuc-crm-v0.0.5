@@ -43,11 +43,22 @@ import {
   DiscountRecord,
 } from './components/DiscountManagementModule';
 import { RegistrationApprovalModule } from './components/RegistrationApprovalModule';
+import { EmployeeList } from './hrmv0.4-main/components/EmployeeList';
+import { LaborList } from './hrmv0.4-main/components/LaborList';
+import { DepartmentList } from './hrmv0.4-main/components/DepartmentList';
+import { PositionList } from './hrmv0.4-main/components/PositionList';
+import { SalaryGradeList } from './hrmv0.4-main/components/SalaryGradeList';
+import { ContractTypeList } from './hrmv0.4-main/components/ContractTypeList';
+import { SalaryRuleGroupList } from './hrmv0.4-main/components/SalaryRuleGroupList';
+import { SalaryStructureList, INITIAL_STRUCTURES } from './hrmv0.4-main/components/SalaryStructureList';
+import { InsuranceTaxParams } from './hrmv0.4-main/components/InsuranceTaxParams';
+import { PayrollPeriodList, PayrollPeriod, INITIAL_PAYROLL_PERIODS } from './hrmv0.4-main/components/PayrollPeriodList';
+import { PayrollTableList, PayrollTableRecord, INITIAL_PAYROLL_TABLES } from './hrmv0.4-main/components/PayrollTableList';
 import { OrderProvider } from './context/OrderContext';
 
 const App: React.FC = () => {
   const [productType, setProductType] = useState<ProductType>(ProductType.SPARE_PART);
-  const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'customer_bookings' | 'customers' | 'discount_management' | 'registration_approval'>('categories');
+  const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'customer_bookings' | 'customers' | 'discount_management' | 'registration_approval' | 'employee_list' | 'labor_list' | 'department_list' | 'position_list' | 'salary_grade_list' | 'contract_type_list' | 'salary_rule_group' | 'salary_structure' | 'insurance_tax_params' | 'payroll_period' | 'payroll_table'>('categories');
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [potentialCustomers, setPotentialCustomers] = useState<
     PotentialCustomerItem[]
@@ -71,6 +82,14 @@ const App: React.FC = () => {
   >({});
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [discounts, setDiscounts] = useState<DiscountRecord[]>(INITIAL_DISCOUNTS);
+
+  // Shared Salary Structures State between Cấu trúc Lương and Hồ sơ hợp đồng
+  const [salaryStructures, setSalaryStructures] = useState(INITIAL_STRUCTURES);
+
+  // Shared Payroll States between Kỳ tính lương and Bảng lương
+  const [payrollPeriods, setPayrollPeriods] = useState<PayrollPeriod[]>(INITIAL_PAYROLL_PERIODS);
+  // Bảng lương: 1 record phù hợp với kỳ tính lương T10/2025 (T10_2025)
+  const [payrollTables, setPayrollTables] = useState<PayrollTableRecord[]>(INITIAL_PAYROLL_TABLES);
 
   const handleCreateCustomerBooking = (
     bookingData: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> & {
@@ -113,6 +132,39 @@ const App: React.FC = () => {
           <MarketplaceManagement />
         ) : currentView === 'repair_service' ? (
           <RepairService />
+        ) : currentView === 'employee_list' ? (
+          <EmployeeList />
+        ) : currentView === 'labor_list' ? (
+          <LaborList salaryStructures={salaryStructures} />
+        ) : currentView === 'department_list' ? (
+          <DepartmentList />
+        ) : currentView === 'position_list' ? (
+          <PositionList />
+        ) : currentView === 'salary_grade_list' ? (
+          <SalaryGradeList />
+        ) : currentView === 'contract_type_list' ? (
+          <ContractTypeList />
+        ) : currentView === 'salary_rule_group' ? (
+          <SalaryRuleGroupList />
+        ) : currentView === 'salary_structure' ? (
+          <SalaryStructureList structures={salaryStructures} setStructures={setSalaryStructures} />
+        ) : currentView === 'insurance_tax_params' ? (
+          <InsuranceTaxParams />
+        ) : currentView === 'payroll_period' ? (
+          <PayrollPeriodList 
+            periods={payrollPeriods}
+            setPeriods={setPayrollPeriods}
+            payrollTables={payrollTables}
+            setPayrollTables={setPayrollTables}
+            onNavigateToPayrollTable={() => setCurrentView('payroll_table')}
+          />
+        ) : currentView === 'payroll_table' ? (
+          <PayrollTableList 
+            payrollTables={payrollTables}
+            setPayrollTables={setPayrollTables}
+            payrollPeriods={payrollPeriods}
+            onNavigateToPeriod={() => setCurrentView('payroll_period')}
+          />
         ) : currentView === 'events' ? (
           <EventsModule />
         ) : currentView === 'potential_customers' ? (

@@ -22,6 +22,7 @@ import {
   EXISTING_CUSTOMERS_IN_MODULE,
   ExistingCustomerRecord,
 } from './PotentialCustomersModule';
+import { CustomerCDPModal } from './CustomerCDPModal';
 
 const CUSTOMER_GROUPS = [
   'Khách hàng VIP / Đại lý',
@@ -53,6 +54,8 @@ export const CustomersModule: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Modals state
+  const [cdpCustomer, setCdpCustomer] =
+    useState<ExistingCustomerRecord | null>(null);
   const [viewingCustomer, setViewingCustomer] =
     useState<ExistingCustomerRecord | null>(null);
   const [editingCustomer, setEditingCustomer] =
@@ -572,8 +575,9 @@ export const CustomersModule: React.FC = () => {
                       <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() => setViewingCustomer(customer)}
+                          onClick={() => setCdpCustomer(customer)}
                           className="font-bold text-[#1A73E8] hover:underline cursor-pointer"
+                          title="Nhấn để mở Hồ sơ CDP Khách hàng 360 độ"
                         >
                           {customer.customerCode}
                         </button>
@@ -1155,6 +1159,14 @@ export const CustomersModule: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Full-Screen Customer 360 CDP Modal */}
+      {cdpCustomer && (
+        <CustomerCDPModal
+          customer={cdpCustomer}
+          onClose={() => setCdpCustomer(null)}
+        />
       )}
     </div>
   );
