@@ -15,7 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
     'discount_management'
   ];
   const isCrmActive = crmViews.includes(currentView);
-  const [isCrmOpen, setIsCrmOpen] = useState(true);
+  const [isCrmOpen, setIsCrmOpen] = useState(false);
 
   const hrmViews = [
     'employee_list',
@@ -31,7 +31,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
     'payroll_table'
   ];
   const isHrmActive = hrmViews.includes(currentView);
-  const [isHrmOpen, setIsHrmOpen] = useState(true);
+  const [isHrmOpen, setIsHrmOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-800 font-sans">
