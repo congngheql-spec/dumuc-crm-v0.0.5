@@ -10,12 +10,16 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categories', onNavigate }) => {
   const crmViews = [
     'potential_customers',
+    'proactive_reminders',
+    'customer_segments',
     'customer_bookings',
     'customers',
     'discount_management'
   ];
   const isCrmActive = crmViews.includes(currentView);
   const [isCrmOpen, setIsCrmOpen] = useState(false);
+  const isReturnInviteActive = currentView === 'proactive_reminders' || currentView === 'customer_segments';
+  const [isReturnInviteOpen, setIsReturnInviteOpen] = useState(false);
 
   const hrmViews = [
     'employee_list',
@@ -173,8 +177,36 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView = 'categor
                   )}
                   <span className="text-sm font-medium">Khách hàng quan tâm</span>
                 </div>
-                <div className="flex items-center pl-11 pr-3 py-2 rounded-md relative cursor-pointer transition-colors text-gray-600 hover:bg-gray-100">
-                  <span className="text-sm font-medium">Mời Khách quay lại</span>
+                <div>
+                  <div 
+                    onClick={() => setIsReturnInviteOpen(!isReturnInviteOpen)}
+                    className={`flex items-center justify-between pl-11 pr-3 py-2 rounded-md relative cursor-pointer transition-colors ${isReturnInviteActive ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <span className="text-sm font-medium">Mời Khách quay lại</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isReturnInviteOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                  {isReturnInviteOpen && (
+                    <div className="mt-1 space-y-1">
+                      <div 
+                        onClick={() => onNavigate?.('proactive_reminders')}
+                        className={`flex items-center pl-16 pr-3 py-2 rounded-md relative cursor-pointer transition-colors ${currentView === 'proactive_reminders' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+                      >
+                        {currentView === 'proactive_reminders' && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+                        )}
+                        <span className="text-sm font-medium">Lịch nhắc chủ động</span>
+                      </div>
+                      <div 
+                        onClick={() => onNavigate?.('customer_segments')}
+                        className={`flex items-center pl-16 pr-3 py-2 rounded-md relative cursor-pointer transition-colors ${currentView === 'customer_segments' ? 'bg-[#EBF5FF] text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+                      >
+                        {currentView === 'customer_segments' && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+                        )}
+                        <span className="text-sm font-medium">Phân khúc Khách hàng</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div 
                   onClick={() => onNavigate?.('customer_bookings')}

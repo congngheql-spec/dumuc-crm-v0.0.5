@@ -58,7 +58,7 @@ import { OrderProvider } from './context/OrderContext';
 
 const App: React.FC = () => {
   const [productType, setProductType] = useState<ProductType>(ProductType.SPARE_PART);
-  const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'customer_bookings' | 'customers' | 'discount_management' | 'registration_approval' | 'employee_list' | 'labor_list' | 'department_list' | 'position_list' | 'salary_grade_list' | 'contract_type_list' | 'salary_rule_group' | 'salary_structure' | 'insurance_tax_params' | 'payroll_period' | 'payroll_table'>('categories');
+  const [currentView, setCurrentView] = useState<'categories' | 'spare_parts' | 'omnichannel' | 'online_ordering' | 'commercial_sales' | 'purchase_orders' | 'supplier_homepage' | 'marketplace' | 'repair_service' | 'events' | 'potential_customers' | 'proactive_reminders' | 'customer_segments' | 'customer_bookings' | 'customers' | 'discount_management' | 'registration_approval' | 'employee_list' | 'labor_list' | 'department_list' | 'position_list' | 'salary_grade_list' | 'contract_type_list' | 'salary_rule_group' | 'salary_structure' | 'insurance_tax_params' | 'payroll_period' | 'payroll_table'>('categories');
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [potentialCustomers, setPotentialCustomers] = useState<
     PotentialCustomerItem[]
@@ -83,6 +83,160 @@ const App: React.FC = () => {
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [discounts, setDiscounts] = useState<DiscountRecord[]>(INITIAL_DISCOUNTS);
 
+  // Isolated & independent states for "Lịch nhắc chủ động" (proactive_reminders)
+  const [proactiveReminders, setProactiveReminders] = useState<
+    PotentialCustomerItem[]
+  >(() => {
+    const cloned: PotentialCustomerItem[] = JSON.parse(JSON.stringify(MOCK_POTENTIAL_CUSTOMERS));
+    const proactiveStatuses: PotentialCustomerItem['status'][] = [
+      'Mới',
+      'Khách hàng đã đặt lịch',
+      'Đang theo dõi',
+      'Khách hàng từ chối',
+      'Khách hàng đã đặt lịch',
+      'Khách hàng từ chối',
+      'Mới',
+      'Khách hàng đã đặt lịch',
+      'Đang theo dõi',
+      'Mới',
+    ];
+    return cloned.map((item, idx) => ({
+      ...item,
+      status: proactiveStatuses[idx % proactiveStatuses.length],
+    }));
+  });
+  const [proactiveGuestHistory, setProactiveGuestHistory] = useState<Record<string, HistoryItem[]>>({});
+  const [proactiveGuestTasks, setProactiveGuestTasks] = useState<Record<string, TaskItem[]>>({});
+  const [proactiveGuestActivityHistory, setProactiveGuestActivityHistory] = useState<
+    Record<string, ActivityItem[]>
+  >({});
+  const [proactiveCustomerBookings, setProactiveCustomerBookings] = useState<CustomerBookingRecord[]>(
+    () => JSON.parse(JSON.stringify(INITIAL_CUSTOMER_BOOKINGS))
+  );
+  const [proactiveBookingInternalNotes, setProactiveBookingInternalNotes] = useState<
+    Record<string, BookingNoteItem[]>
+  >(() => JSON.parse(JSON.stringify(INITIAL_BOOKING_INTERNAL_NOTES)));
+  const [proactiveBookingTasks, setProactiveBookingTasks] = useState<
+    Record<string, BookingTaskItem[]>
+  >(() => JSON.parse(JSON.stringify(INITIAL_BOOKING_TASKS)));
+  const [proactiveBookingActivities, setProactiveBookingActivities] = useState<
+    Record<string, BookingActivityItem[]>
+  >({});
+  const [proactiveBookingCounts, setProactiveBookingCounts] = useState<Record<string, number>>({});
+  const [proactiveDiscounts] = useState<DiscountRecord[]>(() => JSON.parse(JSON.stringify(INITIAL_DISCOUNTS)));
+
+  // Isolated & independent states for "Phân khúc khách hàng" (customer_segments)
+  const [customerSegments, setCustomerSegments] = useState<
+    PotentialCustomerItem[]
+  >(() => {
+    const cloned: PotentialCustomerItem[] = JSON.parse(JSON.stringify(MOCK_POTENTIAL_CUSTOMERS));
+    const segmentStatuses: PotentialCustomerItem['status'][] = [
+      'Mới',
+      'Khách hàng đã đặt lịch',
+      'Đang theo dõi',
+      'Khách hàng từ chối',
+      'Khách hàng đã đặt lịch',
+      'Khách hàng từ chối',
+      'Mới',
+      'Khách hàng đã đặt lịch',
+      'Đang theo dõi',
+      'Mới',
+    ];
+    const mockSegmentData = [
+      {
+        segmentName: 'Khách hàng sắp hết hạn Đăng kiểm & Bảo hiểm (30 ngày tới)',
+        segmentPurpose: 'Mời gia hạn đăng kiểm & bảo hiểm vật chất xe',
+        totalFilterCriteria: 3,
+        roFilterScope: '6 tháng trở lại',
+      },
+      {
+        segmentName: 'Khách hàng chạm mốc bảo dưỡng ODO & sau giao xe 3 tháng',
+        segmentPurpose: 'Nhắc bảo dưỡng định kỳ & thay dầu nhớt',
+        totalFilterCriteria: 4,
+        roFilterScope: '3 tháng trở lại',
+      },
+      {
+        segmentName: 'Khách hàng VIP Doanh thu cao & Đánh giá 5 sao',
+        segmentPurpose: 'Chăm sóc khách hàng VIP doanh thu cao',
+        totalFilterCriteria: 4,
+        roFilterScope: '1 năm trở lại',
+      },
+      {
+        segmentName: 'Khách hàng có Công nợ & Bảo hành cần theo dõi',
+        segmentPurpose: 'Thu hồi công nợ & đối soát thanh toán',
+        totalFilterCriteria: 3,
+        roFilterScope: 'Tất cả',
+      },
+      {
+        segmentName: 'Khách hàng lâu chưa quay lại xưởng (> 6 tháng)',
+        segmentPurpose: 'Tái kích hoạt khách hàng lâu chưa quay lại xưởng',
+        totalFilterCriteria: 5,
+        roFilterScope: '6 tháng trở lại',
+      },
+      {
+        segmentName: 'Khách hàng sắp hết hạn Bảo hành sản phẩm bán',
+        segmentPurpose: 'Tư vấn gia hạn bảo hành phụ tùng & dịch vụ',
+        totalFilterCriteria: 2,
+        roFilterScope: '1 năm trở lại',
+      },
+      {
+        segmentName: 'Khách hàng sử dụng RO - Dịch vụ sửa chữa đồng sơn',
+        segmentPurpose: 'Khảo sát & xử lý khiếu nại chất lượng dịch vụ',
+        totalFilterCriteria: 3,
+        roFilterScope: '1 tháng trở lại',
+      },
+      {
+        segmentName: 'Khách hàng mua Lốp & Ắc quy thương mại',
+        segmentPurpose: 'Nhắc bảo dưỡng định kỳ & thay dầu nhớt',
+        totalFilterCriteria: 3,
+        roFilterScope: '6 tháng trở lại',
+      },
+      {
+        segmentName: 'Khách hàng đánh giá dịch vụ dưới 4 sao cần CSKH',
+        segmentPurpose: 'Khảo sát & xử lý khiếu nại chất lượng dịch vụ',
+        totalFilterCriteria: 2,
+        roFilterScope: '1 tháng trở lại',
+      },
+      {
+        segmentName: 'Khách hàng bảo dưỡng mốc 40.000 km - 80.000 km',
+        segmentPurpose: 'Nhắc bảo dưỡng định kỳ & thay dầu nhớt',
+        totalFilterCriteria: 4,
+        roFilterScope: '3 tháng trở lại',
+      },
+    ];
+    return cloned.map((item, idx) => {
+      const segInfo = mockSegmentData[idx % mockSegmentData.length];
+      return {
+        ...item,
+        id: `seg-${item.id}`,
+        status: segmentStatuses[idx % segmentStatuses.length],
+        segmentName: segInfo.segmentName,
+        segmentPurpose: segInfo.segmentPurpose,
+        totalFilterCriteria: segInfo.totalFilterCriteria,
+        roFilterScope: segInfo.roFilterScope,
+      };
+    });
+  });
+  const [segmentGuestHistory, setSegmentGuestHistory] = useState<Record<string, HistoryItem[]>>({});
+  const [segmentGuestTasks, setSegmentGuestTasks] = useState<Record<string, TaskItem[]>>({});
+  const [segmentGuestActivityHistory, setSegmentGuestActivityHistory] = useState<
+    Record<string, ActivityItem[]>
+  >({});
+  const [segmentCustomerBookings, setSegmentCustomerBookings] = useState<CustomerBookingRecord[]>(
+    () => JSON.parse(JSON.stringify(INITIAL_CUSTOMER_BOOKINGS))
+  );
+  const [segmentBookingInternalNotes, setSegmentBookingInternalNotes] = useState<
+    Record<string, BookingNoteItem[]>
+  >(() => JSON.parse(JSON.stringify(INITIAL_BOOKING_INTERNAL_NOTES)));
+  const [segmentBookingTasks, setSegmentBookingTasks] = useState<
+    Record<string, BookingTaskItem[]>
+  >(() => JSON.parse(JSON.stringify(INITIAL_BOOKING_TASKS)));
+  const [segmentBookingActivities, setSegmentBookingActivities] = useState<
+    Record<string, BookingActivityItem[]>
+  >({});
+  const [segmentBookingCounts, setSegmentBookingCounts] = useState<Record<string, number>>({});
+  const [segmentDiscounts] = useState<DiscountRecord[]>(() => JSON.parse(JSON.stringify(INITIAL_DISCOUNTS)));
+
   // Shared Salary Structures State between Cấu trúc Lương and Hồ sơ hợp đồng
   const [salaryStructures, setSalaryStructures] = useState(INITIAL_STRUCTURES);
 
@@ -101,6 +255,38 @@ const App: React.FC = () => {
       const newRecord: CustomerBookingRecord = {
         ...bookingData,
         id: bookingData.id || `cb-${Date.now()}`,
+        bookingCode: `LH-241027-${nextNum}`,
+      };
+      return [newRecord, ...prev];
+    });
+  };
+
+  const handleCreateProactiveBooking = (
+    bookingData: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> & {
+      id?: string;
+    }
+  ) => {
+    setProactiveCustomerBookings((prev) => {
+      const nextNum = String(prev.length + 1).padStart(2, '0');
+      const newRecord: CustomerBookingRecord = {
+        ...bookingData,
+        id: bookingData.id || `cb-pr-${Date.now()}`,
+        bookingCode: `LH-241027-${nextNum}`,
+      };
+      return [newRecord, ...prev];
+    });
+  };
+
+  const handleCreateSegmentBooking = (
+    bookingData: Omit<CustomerBookingRecord, 'id' | 'bookingCode'> & {
+      id?: string;
+    }
+  ) => {
+    setSegmentCustomerBookings((prev) => {
+      const nextNum = String(prev.length + 1).padStart(2, '0');
+      const newRecord: CustomerBookingRecord = {
+        ...bookingData,
+        id: bookingData.id || `cb-seg-${Date.now()}`,
         bookingCode: `LH-241027-${nextNum}`,
       };
       return [newRecord, ...prev];
@@ -169,6 +355,7 @@ const App: React.FC = () => {
           <EventsModule />
         ) : currentView === 'potential_customers' ? (
           <PotentialCustomersModule
+            key="potential_customers"
             onCreateCustomerBooking={handleCreateCustomerBooking}
             bookingCounts={bookingCounts}
             setBookingCounts={setBookingCounts}
@@ -189,6 +376,57 @@ const App: React.FC = () => {
             setBookingTasks={setBookingTasks}
             bookingActivities={bookingActivities}
             setBookingActivities={setBookingActivities}
+          />
+        ) : currentView === 'proactive_reminders' ? (
+          <PotentialCustomersModule
+            key="proactive_reminders"
+            hideRegistrationSummary={true}
+            onCreateCustomerBooking={handleCreateProactiveBooking}
+            bookingCounts={proactiveBookingCounts}
+            setBookingCounts={setProactiveBookingCounts}
+            customerBookings={proactiveCustomerBookings}
+            setCustomerBookings={setProactiveCustomerBookings}
+            discounts={proactiveDiscounts}
+            events={proactiveReminders}
+            setEvents={setProactiveReminders}
+            guestHistory={proactiveGuestHistory}
+            setGuestHistory={setProactiveGuestHistory}
+            guestTasks={proactiveGuestTasks}
+            setGuestTasks={setProactiveGuestTasks}
+            guestActivityHistory={proactiveGuestActivityHistory}
+            setGuestActivityHistory={setProactiveGuestActivityHistory}
+            bookingInternalNotes={proactiveBookingInternalNotes}
+            setBookingInternalNotes={setProactiveBookingInternalNotes}
+            bookingTasks={proactiveBookingTasks}
+            setBookingTasks={setProactiveBookingTasks}
+            bookingActivities={proactiveBookingActivities}
+            setBookingActivities={setProactiveBookingActivities}
+          />
+        ) : currentView === 'customer_segments' ? (
+          <PotentialCustomersModule
+            key="customer_segments"
+            hideRegistrationSummary={true}
+            isCustomerSegmentsMode={true}
+            onCreateCustomerBooking={handleCreateSegmentBooking}
+            bookingCounts={segmentBookingCounts}
+            setBookingCounts={setSegmentBookingCounts}
+            customerBookings={segmentCustomerBookings}
+            setCustomerBookings={setSegmentCustomerBookings}
+            discounts={segmentDiscounts}
+            events={customerSegments}
+            setEvents={setCustomerSegments}
+            guestHistory={segmentGuestHistory}
+            setGuestHistory={setSegmentGuestHistory}
+            guestTasks={segmentGuestTasks}
+            setGuestTasks={setSegmentGuestTasks}
+            guestActivityHistory={segmentGuestActivityHistory}
+            setGuestActivityHistory={setSegmentGuestActivityHistory}
+            bookingInternalNotes={segmentBookingInternalNotes}
+            setBookingInternalNotes={setSegmentBookingInternalNotes}
+            bookingTasks={segmentBookingTasks}
+            setBookingTasks={setSegmentBookingTasks}
+            bookingActivities={segmentBookingActivities}
+            setBookingActivities={setSegmentBookingActivities}
           />
         ) : currentView === 'customer_bookings' ? (
           <CustomerBookingsModule
