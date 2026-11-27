@@ -19,6 +19,10 @@ import {
   FEEDBACK_SURVEY_QUESTIONS,
   CSKH_FEELING_QUESTION_ID,
 } from './FeedbackCallSurveyModal';
+import {
+  FeedbackRecordDetailModal,
+  type FeedbackAttachmentItem,
+} from './FeedbackRecordDetailModal';
 
 export type FeedbackStatus = 'Mới' | 'Đang thực hiện' | 'Hoàn thành' | 'Dừng';
 export type FeedbackCallResult = 'Từ chối' | 'Gọi lần 1' | 'Gọi lần 2' | 'Gọi lần 3' | 'Không nghe máy';
@@ -379,6 +383,9 @@ export interface PotentialCustomerItem {
   totalFilterCriteria?: number | string;
   roFilterScope?: string;
   qualitySurvey?: FeedbackSurveyData;
+  feedbackUnsatisfiedCategories?: string[];
+  feedbackContent?: string;
+  feedbackAttachments?: FeedbackAttachmentItem[];
 }
 
 export type FeedbackItem = PotentialCustomerItem;
@@ -1485,7 +1492,7 @@ export const FeedbackModule: React.FC<FeedbackModuleProps> = ({
   const [filterSource, setFilterSource] = useState('Tất cả');
   const [filterCarBrand, setFilterCarBrand] = useState('Tất cả');
   const [filterCarModel, setFilterCarModel] = useState('Tất cả');
-  const [filterCreatedBy, setFilterCreatedBy] = useState('Tất cả');
+  const [filterServiceAdvisor, setFilterServiceAdvisor] = useState('Tất cả');
   const [selectedRecord, setSelectedRecord] = useState<PotentialCustomerItem | null>(null);
   const [selectedRoDetailRow, setSelectedRoDetailRow] = useState<PotentialCustomerItem | null>(null);
   const [isQuotationPickerOpen, setIsQuotationPickerOpen] = useState(false);
@@ -1606,6 +1613,8 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   const [guestProfileModalOpen, setGuestProfileModalOpen] = useState(false);
   const [selectedGuestRecord, setSelectedGuestRecord] = useState<PotentialCustomerItem | null>(null);
   const [activeTab, setActiveTab] = useState<'activity_history' | 'history' | 'tasks'>('activity_history');
+  const [feedbackDetailRecord, setFeedbackDetailRecord] = useState<PotentialCustomerItem | null>(null);
+  const [feedbackDetailTab, setFeedbackDetailTab] = useState<'activity_history' | 'history' | 'tasks'>('tasks');
   const [internalGuestHistory, setInternalGuestHistory] = useState<Record<string, HistoryItem[]>>({});
   const guestHistory = externalGuestHistory ?? internalGuestHistory;
   const setGuestHistory = externalSetGuestHistory ?? setInternalGuestHistory;
@@ -1766,7 +1775,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   };
   
   const handleSaveNote = () => {
-    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    const targetGuest = bookingModalRecord || feedbackDetailRecord || (guestProfileModalOpen ? selectedGuestRecord : null);
     if (!noteContent.trim() || !targetGuest) return;
     
     const newNote: HistoryItem = {
@@ -1798,7 +1807,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   };
 
   const handleAddTask = () => {
-    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    const targetGuest = bookingModalRecord || feedbackDetailRecord || (guestProfileModalOpen ? selectedGuestRecord : null);
     if (!taskContent.trim() || !targetGuest) return;
     
     const newTask: TaskItem = {
@@ -1831,7 +1840,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   };
 
   const handleToggleTask = (taskId: string) => {
-    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    const targetGuest = bookingModalRecord || feedbackDetailRecord || (guestProfileModalOpen ? selectedGuestRecord : null);
     if (!targetGuest) return;
     
     const task = guestTasks[targetGuest.id]?.find(t => t.id === taskId);
@@ -1871,7 +1880,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
   };
 
   const handleSaveEditTask = () => {
-    const targetGuest = selectedGuestRecord || bookingModalRecord;
+    const targetGuest = bookingModalRecord || feedbackDetailRecord || (guestProfileModalOpen ? selectedGuestRecord : null);
     if (!targetGuest || !editingTaskId || !editTaskContent.trim()) return;
     
     const oldTask = guestTasks[targetGuest.id]?.find(t => t.id === editingTaskId);
@@ -1920,7 +1929,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     source: 'Tất cả',
     carBrand: 'Tất cả',
     carModel: 'Tất cả',
-    createdBy: 'Tất cả'
+    serviceAdvisor: 'Tất cả'
   });
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2192,7 +2201,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
       source: filterSource,
       carBrand: filterCarBrand,
       carModel: filterCarModel,
-      createdBy: filterCreatedBy
+      serviceAdvisor: filterServiceAdvisor
     });
   };
 
@@ -2208,7 +2217,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     setFilterSource('Tất cả');
     setFilterCarBrand('Tất cả');
     setFilterCarModel('Tất cả');
-    setFilterCreatedBy('Tất cả');
+    setFilterServiceAdvisor('Tất cả');
     setAppliedFilters({
       search: '',
       code: '',
@@ -2220,7 +2229,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
       source: 'Tất cả',
       carBrand: 'Tất cả',
       carModel: 'Tất cả',
-      createdBy: 'Tất cả'
+      serviceAdvisor: 'Tất cả'
     });
   };
 
@@ -2242,7 +2251,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     setFilterSource('Tất cả');
     setFilterCarBrand('Tất cả');
     setFilterCarModel('Tất cả');
-    setFilterCreatedBy('Tất cả');
+    setFilterServiceAdvisor('Tất cả');
     setAppliedFilters({
       search: trimmed,
       code: '',
@@ -2254,7 +2263,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
       source: 'Tất cả',
       carBrand: 'Tất cả',
       carModel: 'Tất cả',
-      createdBy: 'Tất cả',
+      serviceAdvisor: 'Tất cả',
     });
   };
 
@@ -2281,7 +2290,9 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
       .map(item => item.carModel)
       .filter(Boolean)
   )) as string[];
-  const uniqueCreators = Array.from(new Set(events.map(item => item.createdBy).filter(Boolean))) as string[];
+  const uniqueServiceAdvisors = Array.from(
+    new Set(events.map(item => item.serviceAdvisor || item.createdBy).filter(Boolean))
+  ) as string[];
 
   const filteredData = events.filter((item) => {
     if (exactRoFilter) {
@@ -2307,21 +2318,21 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     if (!hideRegistrationSummary && appliedFilters.source !== 'Tất cả' && item.source !== appliedFilters.source) return false;
     if (hideRegistrationSummary && appliedFilters.carBrand !== 'Tất cả' && item.carBrand !== appliedFilters.carBrand) return false;
     if (hideRegistrationSummary && appliedFilters.carModel !== 'Tất cả' && item.carModel !== appliedFilters.carModel) return false;
-    if (hideRegistrationSummary && appliedFilters.createdBy !== 'Tất cả' && item.createdBy !== appliedFilters.createdBy) return false;
+    if (hideRegistrationSummary && appliedFilters.serviceAdvisor !== 'Tất cả' && (item.serviceAdvisor || item.createdBy || '') !== appliedFilters.serviceAdvisor) return false;
     
     if (appliedFilters.dateFrom || appliedFilters.dateTo) {
       const [day, month, year] = item.registrationDate.split('/');
       const itemDate = new Date(Number(year), Number(month) - 1, Number(day));
       
       if (appliedFilters.dateFrom) {
-        const fromDate = new Date(appliedFilters.dateFrom);
-        fromDate.setHours(0, 0, 0, 0);
+        const [fy, fm, fd] = appliedFilters.dateFrom.split('-').map(Number);
+        const fromDate = new Date(fy, fm - 1, fd, 0, 0, 0, 0);
         if (itemDate < fromDate) return false;
       }
       
       if (appliedFilters.dateTo) {
-        const toDate = new Date(appliedFilters.dateTo);
-        toDate.setHours(23, 59, 59, 999);
+        const [ty, tm, td] = appliedFilters.dateTo.split('-').map(Number);
+        const toDate = new Date(ty, tm - 1, td, 23, 59, 59, 999);
         if (itemDate > toDate) return false;
       }
     }
@@ -2369,7 +2380,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
     const headers = isCustomerSegmentsMode
       ? ['STT', 'Trạng thái', 'Tên phân khúc khách hàng', 'Mục đích', 'Tổng tiêu chí lọc', 'Phạm vị lọc RO', 'Người tạo', 'Ngày tạo']
       : hideRegistrationSummary
-      ? ['STT', 'RO', 'Cố vấn dịch vụ', 'Ngày nhận xe', 'Ngày hẹn giao', 'Ngày bàn giao thực tế', 'Số ngày sau ngày bàn giao', 'Trạng thái cuộc gọi', 'Kết quả cuộc gọi', 'Trạng thái', 'Khách hàng', 'Số điện thoại', 'Email', 'Biển số xe', 'Hiệu xe', 'Dòng xe', 'Doanh thu RO', 'Người tạo', 'Ngày tạo']
+      ? ['STT', 'Ngày gửi phản ánh', 'Khách hàng', 'Số điện thoại', 'Email', 'Biển số xe', 'Hiệu xe', 'Dòng xe', 'RO', 'Cố vấn dịch vụ', 'Ngày nhận xe', 'Ngày hẹn giao', 'Ngày bàn giao thực tế', 'Trạng thái cuộc gọi', 'Kết quả cuộc gọi', 'Trạng thái']
       : ['STT', 'Trạng thái cuộc gọi', 'Kết quả cuộc gọi', 'Họ và tên', 'Số điện thoại', 'Email', 'Nhu cầu', 'Ngày tạo', 'Nguồn', 'Mã người dùng (Kênh)', 'Mã chiến dịch', 'Tên chiến dịch', 'Ngày hẹn', 'Khung giờ hẹn', 'Trạng thái'];
     const csvContent = [
       headers.join(','),
@@ -2378,7 +2389,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
         return isCustomerSegmentsMode
           ? [index + 1, `"${row.status}"`, `"${row.segmentName || row.name || ''}"`, `"${row.segmentPurpose || ''}"`, `"${row.totalFilterCriteria ?? ''}"`, `"${row.roFilterScope || ''}"`, `"${row.createdBy || ''}"`, row.registrationDate].join(',')
           : hideRegistrationSummary
-          ? [index + 1, `"${row.originalRoCode || ''}"`, `"${row.serviceAdvisor || row.createdBy || ''}"`, `"${roDateInfo.receiveDate}"`, `"${roDateInfo.promisedDate}"`, `"${roDateInfo.actualDate}"`, `"${roDateInfo.daysAfterDeliveryLabel}"`, `"${row.callStatus}"`, `"${row.callResult}"`, `"${row.status}"`, `"${row.fullName}"`, row.phone, row.email, `"${row.licensePlate || ''}"`, `"${row.carBrand || ''}"`, `"${row.carModel || ''}"`, `"${row.originalRoRevenue || ''}"`, `"${row.createdBy || ''}"`, row.registrationDate].join(',')
+          ? [index + 1, row.registrationDate, `"${row.fullName}"`, row.phone, row.email, `"${row.licensePlate || ''}"`, `"${row.carBrand || ''}"`, `"${row.carModel || ''}"`, `"${row.originalRoCode || ''}"`, `"${row.serviceAdvisor || row.createdBy || ''}"`, `"${roDateInfo.receiveDate}"`, `"${roDateInfo.promisedDate}"`, `"${roDateInfo.actualDate}"`, `"${row.callStatus}"`, `"${row.callResult}"`, `"${row.status}"`].join(',')
           : [index + 1, `"${row.callStatus}"`, `"${row.callResult}"`, `"${row.fullName}"`, row.phone, row.email, `"${row.demands.join(', ')}"`, row.registrationDate, `"${row.source}"`, `"${row.channelUserCode}"`, row.code, `"${row.name}"`, row.appointmentDate, `"${row.appointmentTimeSlot}"`, `"${row.status}"`].join(',');
       })
     ].join('\n');
@@ -2465,11 +2476,11 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
 
       {/* Filter Bar */}
       <div className="px-6 py-4 flex flex-col gap-4 border-b border-gray-200">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="space-y-1.5 flex-1 min-w-[200px] max-w-[300px]">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5 flex-1 min-w-[240px] max-w-[320px]">
             <input 
               type="text" 
-              placeholder={hideRegistrationSummary ? "Tìm Khách hàng, SĐT, Email, Biển số, RO gốc..." : "Tìm kiếm Họ tên, SĐT, Email..."} 
+              placeholder={hideRegistrationSummary ? "Tìm Khách hàng, SĐT, Email, Biển số xe, RO..." : "Tìm kiếm Họ tên, SĐT, Email..."} 
               value={filterSearch}
               onChange={(e) => {
                 if (exactRoFilter) setExactRoFilter('');
@@ -2515,7 +2526,33 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
             </div>
           ) : (
             <>
-              <div className="space-y-1.5 flex-1 min-w-[140px] max-w-[180px]">
+              <div className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-1.5 bg-white shrink-0">
+                <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
+                  Ngày gửi phản ánh:
+                </span>
+                <input 
+                  type="date" 
+                  value={filterDateFrom}
+                  onChange={(e) => {
+                    setFilterDateFrom(e.target.value);
+                    setAppliedFilters(prev => ({ ...prev, dateFrom: e.target.value }));
+                  }}
+                  className="text-sm text-gray-800 outline-none bg-transparent py-0.5" 
+                  title="Ngày gửi phản ánh - Từ ngày"
+                />
+                <span className="text-gray-400 text-xs">–</span>
+                <input 
+                  type="date" 
+                  value={filterDateTo}
+                  onChange={(e) => {
+                    setFilterDateTo(e.target.value);
+                    setAppliedFilters(prev => ({ ...prev, dateTo: e.target.value }));
+                  }}
+                  className="text-sm text-gray-800 outline-none bg-transparent py-0.5" 
+                  title="Ngày gửi phản ánh - Đến ngày"
+                />
+              </div>
+              <div className="space-y-1.5 flex-1 min-w-[130px] max-w-[175px]">
                 <select 
                   value={filterCarBrand}
                   onChange={(e) => {
@@ -2531,7 +2568,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                   ))}
                 </select>
               </div>
-              <div className="space-y-1.5 flex-1 min-w-[140px] max-w-[180px]">
+              <div className="space-y-1.5 flex-1 min-w-[130px] max-w-[175px]">
                 <select 
                   value={filterCarModel}
                   onChange={(e) => {
@@ -2546,24 +2583,24 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                   ))}
                 </select>
               </div>
-              <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
+              <div className="space-y-1.5 flex-1 min-w-[155px] max-w-[200px]">
                 <select 
-                  value={filterCreatedBy}
+                  value={filterServiceAdvisor}
                   onChange={(e) => {
-                    setFilterCreatedBy(e.target.value);
-                    setAppliedFilters(prev => ({ ...prev, createdBy: e.target.value }));
+                    setFilterServiceAdvisor(e.target.value);
+                    setAppliedFilters(prev => ({ ...prev, serviceAdvisor: e.target.value }));
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-[#1A73E8] bg-white"
                 >
-                  <option value="Tất cả">Người tạo</option>
-                  {uniqueCreators.map(creator => (
-                    <option key={creator} value={creator}>{creator}</option>
+                  <option value="Tất cả">Cố vấn dịch vụ</option>
+                  {uniqueServiceAdvisors.map(advisor => (
+                    <option key={advisor} value={advisor}>{advisor}</option>
                   ))}
                 </select>
               </div>
             </>
           )}
-          <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
+          <div className="space-y-1.5 flex-1 min-w-[155px] max-w-[200px]">
             <select 
               value={filterCallStatus}
               onChange={(e) => {
@@ -2577,7 +2614,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
               <option value="Đã gọi">Đã gọi</option>
             </select>
           </div>
-          <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
+          <div className="space-y-1.5 flex-1 min-w-[155px] max-w-[200px]">
             <select 
               value={filterCallResult}
               onChange={(e) => {
@@ -2613,7 +2650,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
               </select>
             </div>
           )}
-          <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
+          <div className="space-y-1.5 flex-1 min-w-[140px] max-w-[185px]">
             <select 
               value={filterStatus}
               onChange={(e) => {
@@ -2640,30 +2677,34 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
               )}
             </select>
           </div>
-          <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
-            <input 
-              type="date" 
-              value={filterDateFrom}
-              onChange={(e) => {
-                setFilterDateFrom(e.target.value);
-                setAppliedFilters(prev => ({ ...prev, dateFrom: e.target.value }));
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-[#1A73E8]" 
-              title="Từ ngày"
-            />
-          </div>
-          <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
-            <input 
-              type="date" 
-              value={filterDateTo}
-              onChange={(e) => {
-                setFilterDateTo(e.target.value);
-                setAppliedFilters(prev => ({ ...prev, dateTo: e.target.value }));
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-[#1A73E8]" 
-              title="Đến ngày"
-            />
-          </div>
+          {!hideRegistrationSummary && (
+            <>
+              <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
+                <input 
+                  type="date" 
+                  value={filterDateFrom}
+                  onChange={(e) => {
+                    setFilterDateFrom(e.target.value);
+                    setAppliedFilters(prev => ({ ...prev, dateFrom: e.target.value }));
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-[#1A73E8]" 
+                  title="Từ ngày"
+                />
+              </div>
+              <div className="space-y-1.5 flex-1 min-w-[150px] max-w-[200px]">
+                <input 
+                  type="date" 
+                  value={filterDateTo}
+                  onChange={(e) => {
+                    setFilterDateTo(e.target.value);
+                    setAppliedFilters(prev => ({ ...prev, dateTo: e.target.value }));
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-[#1A73E8]" 
+                  title="Đến ngày"
+                />
+              </div>
+            </>
+          )}
           <div className="flex items-center gap-2">
             <button 
               onClick={handleApplyFilter}
@@ -2707,12 +2748,18 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                 <th className="px-4 py-3 border-b border-gray-200 text-center">Hành động</th>
                 {hideRegistrationSummary && !isCustomerSegmentsMode && (
                   <>
+                    <th className="px-4 py-3 border-b border-gray-200">Ngày gửi phản ánh</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Khách hàng</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Số điện thoại</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Email</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Biển số xe</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Hiệu xe</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Dòng xe</th>
                     <th className="px-4 py-3 border-b border-gray-200">RO</th>
                     <th className="px-4 py-3 border-b border-gray-200">Cố vấn dịch vụ</th>
                     <th className="px-4 py-3 border-b border-gray-200">Ngày nhận xe</th>
                     <th className="px-4 py-3 border-b border-gray-200">Ngày hẹn giao</th>
                     <th className="px-4 py-3 border-b border-gray-200">Ngày bàn giao thực tế</th>
-                    <th className="px-4 py-3 border-b border-gray-200 text-center">Số ngày sau ngày bàn giao</th>
                   </>
                 )}
                 {!isCustomerSegmentsMode && (
@@ -2733,35 +2780,22 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                     <th className="px-4 py-3 border-b border-gray-200">Người tạo</th>
                     <th className="px-4 py-3 border-b border-gray-200">Ngày tạo</th>
                   </>
-                ) : (
+                ) : !hideRegistrationSummary ? (
                   <>
-                    <th className="px-4 py-3 border-b border-gray-200">{hideRegistrationSummary ? 'Khách hàng' : 'Họ và tên'}</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Họ và tên</th>
                     <th className="px-4 py-3 border-b border-gray-200">Số điện thoại</th>
                     <th className="px-4 py-3 border-b border-gray-200">Email</th>
-                    {hideRegistrationSummary ? (
-                      <>
-                        <th className="px-4 py-3 border-b border-gray-200">Biển số xe</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Hiệu xe</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Dòng xe</th>
-                        <th className="px-4 py-3 border-b border-gray-200 text-right">Doanh thu RO</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Người tạo</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Ngày tạo</th>
-                      </>
-                    ) : (
-                      <>
-                        <th className="px-4 py-3 border-b border-gray-200">Nhu cầu</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Ngày tạo</th>
-                        <th className="px-4 py-3 border-b border-gray-200 text-center">Nguồn</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Mã người dùng (Kênh)</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Mã chiến dịch</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Tên chiến dịch</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Ngày hẹn</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Khung giờ hẹn</th>
-                        <th className="px-4 py-3 border-b border-gray-200">Trạng thái</th>
-                      </>
-                    )}
+                    <th className="px-4 py-3 border-b border-gray-200">Nhu cầu</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Ngày tạo</th>
+                    <th className="px-4 py-3 border-b border-gray-200 text-center">Nguồn</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Mã người dùng (Kênh)</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Mã chiến dịch</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Tên chiến dịch</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Ngày hẹn</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Khung giờ hẹn</th>
+                    <th className="px-4 py-3 border-b border-gray-200">Trạng thái</th>
                   </>
-                )}
+                ) : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -2773,7 +2807,10 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                   key={row.id}
                   className="hover:bg-blue-50/50 transition-colors cursor-pointer"
                   onClick={() => {
-                    if (hideRegistrationSummary) {
+                    if (hideRegistrationSummary && !isCustomerSegmentsMode) {
+                      setFeedbackDetailRecord(row);
+                      setFeedbackDetailTab('tasks');
+                    } else if (hideRegistrationSummary) {
                       setEditingReminderRecord(row);
                       setQuoteSearch('');
                       setQuoteVehicleFilter('Tất cả xe');
@@ -2918,10 +2955,10 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                             } ${isExactRoFiltered ? 'ring-2 ring-[#1A73E8]' : ''}`}
                             title={
                               isDuplicateRo
-                                ? `RO trùng đánh giá (${duplicateCount} phiếu) — Nhấn để lọc chính xác RO ${row.originalRoCode}`
+                                ? `RO trùng phản ánh (${duplicateCount} phiếu) — Nhấn để lọc chính xác RO ${row.originalRoCode}`
                                 : row.originalRoCode
-                                ? `RO trùng đánh giá — Nhấn để lọc chính xác RO ${row.originalRoCode}`
-                                : 'RO trùng đánh giá'
+                                ? `RO trùng phản ánh — Nhấn để lọc chính xác RO ${row.originalRoCode}`
+                                : 'RO trùng phản ánh'
                             }
                             onClick={() => handleFilterExactRo(row.originalRoCode)}
                           >
@@ -2954,6 +2991,13 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                   </td>
                   {hideRegistrationSummary && !isCustomerSegmentsMode && (
                     <>
+                      <td className="px-4 py-3 text-gray-800">{row.registrationDate}</td>
+                      <td className="px-4 py-3 text-gray-800">{row.fullName}</td>
+                      <td className="px-4 py-3 text-gray-800">{row.phone}</td>
+                      <td className="px-4 py-3 text-gray-800">{row.email}</td>
+                      <td className="px-4 py-3 font-medium text-gray-800">{row.licensePlate || '-'}</td>
+                      <td className="px-4 py-3 text-gray-800">{row.carBrand || '-'}</td>
+                      <td className="px-4 py-3 text-gray-800">{row.carModel || '-'}</td>
                       <td
                         className="px-4 py-3 font-medium text-[#1A73E8] hover:underline cursor-pointer"
                         onClick={(e) => {
@@ -2968,7 +3012,6 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                       <td className="px-4 py-3 text-gray-700">{roDateInfo.receiveDate}</td>
                       <td className="px-4 py-3 text-gray-700">{roDateInfo.promisedDate}</td>
                       <td className="px-4 py-3 text-gray-700">{roDateInfo.actualDate}</td>
-                      <td className="px-4 py-3 text-center text-gray-700">{roDateInfo.daysAfterDeliveryLabel}</td>
                     </>
                   )}
                   {!isCustomerSegmentsMode && (
@@ -3023,7 +3066,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                     </td>
                     );
                   })()}
-                  {!isCustomerSegmentsMode && (
+                  {!isCustomerSegmentsMode && !hideRegistrationSummary && (
                     <>
                       <td className="px-4 py-3 text-gray-800">{row.fullName}</td>
                       <td className="px-4 py-3 text-gray-800">{row.phone}</td>
@@ -3054,16 +3097,7 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
                           {row.registrationDate}
                         </td>
                       </>
-                    ) : (
-                      <>
-                        <td className="px-4 py-3 font-medium text-gray-800">{row.licensePlate || '-'}</td>
-                        <td className="px-4 py-3 text-gray-800">{row.carBrand || '-'}</td>
-                        <td className="px-4 py-3 text-gray-800">{row.carModel || '-'}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-gray-800">{row.originalRoRevenue || '-'}</td>
-                        <td className="px-4 py-3 text-gray-800">{row.createdBy || '-'}</td>
-                        <td className="px-4 py-3 text-gray-800">{row.registrationDate}</td>
-                      </>
-                    )
+                    ) : null
                   ) : (
                     <>
                       <td className="px-4 py-3 relative" onClick={(e) => e.stopPropagation()}>
@@ -3719,6 +3753,37 @@ Garage ${branchName} đón tiếp ${salutation} rồi ạ!
             onOpenEmail={(record) => openEmailModalForRecord(record)}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            activityHistory={guestActivityHistory[currentGuest.id] || []}
+            notesHistory={guestHistory[currentGuest.id] || []}
+            noteContent={noteContent}
+            setNoteContent={setNoteContent}
+            onSaveNote={handleSaveNote}
+            tasks={guestTasks[currentGuest.id] || []}
+            taskContent={taskContent}
+            setTaskContent={setTaskContent}
+            onAddTask={handleAddTask}
+            onToggleTask={handleToggleTask}
+            editingTaskId={editingTaskId}
+            editTaskContent={editTaskContent}
+            setEditTaskContent={setEditTaskContent}
+            onStartEditTask={handleStartEditTask}
+            onSaveEditTask={handleSaveEditTask}
+            onCancelEditTask={handleCancelEditTask}
+          />
+        );
+      })()}
+
+      {/* Full-Screen Record Detail Modal for Phản ánh (Independent) */}
+      {feedbackDetailRecord && (() => {
+        const currentGuest = events.find(e => e.id === feedbackDetailRecord.id) || feedbackDetailRecord;
+        const roDateInfo = getRoDateInfo(currentGuest);
+        return (
+          <FeedbackRecordDetailModal
+            currentGuest={currentGuest}
+            roDateInfo={roDateInfo}
+            activeTab={feedbackDetailTab}
+            setActiveTab={setFeedbackDetailTab}
+            onClose={() => setFeedbackDetailRecord(null)}
             activityHistory={guestActivityHistory[currentGuest.id] || []}
             notesHistory={guestHistory[currentGuest.id] || []}
             noteContent={noteContent}
